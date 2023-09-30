@@ -15,6 +15,7 @@ COPY bun.lockb ./
 COPY src ./src
 
 RUN bun install
+RUN cd node_modules/@taskforcesh/message-broker && bun run postinstall
 
 CMD bun run ./src/index.ts
 HEALTHCHECK --interval=5s --timeout=5s --retries=3 CMD wget localhost:8080 -q -O - > /dev/null 2>&1
