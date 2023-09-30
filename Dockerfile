@@ -16,6 +16,5 @@ COPY src ./src
 
 RUN bun install
 
-#CMD bun run ./src/index.ts
-CMD cat package.json 
+CMD bun run ./src/index.ts
 HEALTHCHECK --interval=5s --timeout=5s --retries=3 CMD wget localhost:8080 -q -O - > /dev/null 2>&1
