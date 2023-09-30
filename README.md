@@ -77,8 +77,6 @@ The proxy will validate the function and the arguments and will return the resul
 
 The Worker API is accessible at the `/queue/:queueName/process/:concurrency` endpoint. It allows you start consuming jobs from a queue with the specified concurrency. As soon as the websocket connection is stablished, the proxy will start sending websocket messages with the jobs that are supposed to be processed by this client and send a message back to the proxy with the result of the job.
 
-Note that the worker needs to acknowledge the job so that the proxy can assume the job has started to be processed by the worker.
-
 ```typescript
 interface WorkerPayload {
   type: "process";
