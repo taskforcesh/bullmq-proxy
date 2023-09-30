@@ -17,13 +17,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    name: testing node@${{ matrix.node-version }}, redis@${{ matrix.redis-version }}
-
-    strategy:
-      matrix:
-        node-version: [lts/*, lts/-1, lts/-2, current]
-        include:
-          - node-version: "lts/*"
+    name: Testing with Bun
 
     steps:
       - name: Checkout repository
