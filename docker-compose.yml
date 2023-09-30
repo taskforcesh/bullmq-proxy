@@ -1,0 +1,15 @@
+version: '3'
+services:
+  proxy:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      PORT: 8080
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_TLS: ${REDIS_TLS}
+      AUTH_TOKENS: ${AUTH_TOKENS}
+  redis:
+    image: "redis:alpine"
