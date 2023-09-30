@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    name: testing node@${{ matrix.node-version }}, redis@${{ matrix.redis-version }}
+
+    strategy:
+      matrix:
+        node-version: [lts/*, lts/-1, lts/-2, current]
+        include:
+          - node-version: "lts/*"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3 # v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun test
