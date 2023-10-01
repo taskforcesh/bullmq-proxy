@@ -36,14 +36,10 @@ export const QueueController: WebSocketBehaviour = {
       const errors = Value.Errors(QueueSchema, parsedMessage.data);
       const firstError = errors.First();
       if (firstError) {
-        const errorResponse = [firstError];
-        for (const err of errors) {
-          errorResponse.push(err);
-        }
-        if (errorResponse.length > 0) {
-          respond(ws, parsedMessage.id, { errors: errorResponse });
-          return;
-        }
+        // The errors are difficult to read, so we'll just send a generic one
+        // until we can do something better.
+        respond(ws, parsedMessage.id, { err: { message: `Invalid message ${message}`, stack: "" } })
+        return;
       }
 
       const queue = ws.data.queue;
@@ -52,7 +48,7 @@ export const QueueController: WebSocketBehaviour = {
         const result = await queue[fn].apply(queue, args);
         respond(ws, parsedMessage.id, { ok: result });
       } catch (err) {
-        respond(ws, parsedMessage.id, { error: (<Error>err).message });
+        respond(ws, parsedMessage.id, { err: (<Error>err).message });
       }
     } catch (err) {
       console.error(err);

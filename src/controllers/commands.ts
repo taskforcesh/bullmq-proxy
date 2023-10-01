@@ -10,15 +10,10 @@ enum QueueCommandTypes {
     Add = "add",
     Pause = "pause",
     Resume = "resume",
-    Empty = "empty",
-    Clean = "clean",
-    Count = "count",
     GetJobs = "getJobs",
-    GetJobsCount = "getJobsCount",
+    GetJobCounts = "getJobCounts",
     GetJobLogs = "getJobLogs",
     RemoveRepeatable = "removeRepeatable",
-    JobsCommand = "jobs",
-    JobUpdate = "jobUpdate",
     JobProgress = "jobProgress",
     JobLog = "jobLog",
 }
@@ -57,6 +52,11 @@ const GetJobsSchema = Type.Object({
     ]),
 });
 
+const GetJobCountsSchema = Type.Object({
+    fn: Type.Literal(QueueCommandTypes.GetJobCounts),
+    args: Type.Tuple([]),
+});
+
 const UpdateJobProgressSchema = Type.Object({
     fn: Type.Literal(QueueCommandTypes.JobProgress),
     args: Type.Tuple([Type.String(), Type.Union([Type.Number(), Type.Any()])]),
@@ -67,6 +67,7 @@ export const QueueSchema = Type.Union([
     PauseSchema,
     ResumeSchema,
     GetJobsSchema,
+    GetJobCountsSchema,
     UpdateJobProgressSchema,
 ]);
 
