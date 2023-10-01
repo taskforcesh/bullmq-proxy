@@ -80,7 +80,17 @@ interface QueuePayload {
 }
 ```
 
-The proxy will validate the function and the arguments and will return the result of the function call to the client, or an error if the function call failed.
+The proxy will validate the function and the arguments and will return the result of the function call to the client, or an error if the function call failed following this interface:
+
+```typescript
+interface QueueResult {
+  ok?: any; // Result of the function call if it was successful
+  err?: {
+    message: string,
+    stack: string,
+  }
+}
+```
 
 ## [Worker API](#worker-api)
 
