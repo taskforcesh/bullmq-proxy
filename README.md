@@ -39,6 +39,26 @@ docker build -t bullmq-proxy github.com/taskforcesh/bullmq-proxy
 docker run -p 8080:8080 -e REDIS_HOST=redis -e REDIS_PORT=6379 -e AUTH_KEYS=my-auth-key-1,my-auth-key-2 bullmq-proxy
 ```
 
+## Developing
+
+If you want to contribute to this project, you can clone the repository and run the proxy locally using the following command:
+
+```bash
+AUTH_TOKENS=1234 bun --watch src/index.ts
+```
+
+Which will start the proxy locally connected to a local Redis instance (on port 6379) and listening on port 8080.
+If you then use a websocket client to connect to the proxy, you will see the following output in the console:
+
+```bash
+Starting BullMQ Proxy on port 8080 (c) 2023 Taskforce.sh v0.1.0
+[1696158613843] BullMQ Proxy: Worker connected for queue test-queue with concurrency 20
+[1696158613849] BullMQ Proxy: Queue connected for queue test-queue
+[1696158613850] BullMQ Proxy: Queue events connected for queue test-queue with events waiting,active
+[1696158613851] BullMQ Proxy: Subscribing to event: waiting, for queue: test-queue
+[1696158613851] BullMQ Proxy: Subscribing to event: active, for queue: test-queue
+```
+
 # Connecting to the proxy
 
 ## WebSocket protocol
@@ -86,9 +106,9 @@ The proxy will validate the function and the arguments and will return the resul
 interface QueueResult {
   ok?: any; // Result of the function call if it was successful
   err?: {
-    message: string,
-    stack: string,
-  }
+    message: string;
+    stack: string;
+  };
 }
 ```
 
