@@ -58,6 +58,15 @@ The `id` field is used to identify the message and the `data` field contains the
 
 The id field must be unique for each message sent by the client, and it will be guaranteed unique for every message sent by the proxy. The easiest and most efficient way to implement this uniqueness is to use a counter that is incremented for each message sent by the client (this is the way the proxy does it internally).
 
+## Security
+
+The proxy allows you to define an array of auth keys that will be used to authenticate the client. The client must send the auth key as a query parameter when connecting to the proxy. If the auth key is not valid, the proxy will close the connection.
+
+So for example, if you have defined the auth keys `my-auth-key-1` and `my-auth-key-2`, you can connect to the proxy using the following URL: `ws://localhost:8080/queue/my-queue?authKey=my-auth-key-1`. For production it is expected that you will always
+use a secure connection (wss) and that you will use a secure auth key.
+
+# API
+
 The data field varies depending on the type of the websocket connection. There are 3 different types of connections:
 
 ## [Queue API](#queue-api)
