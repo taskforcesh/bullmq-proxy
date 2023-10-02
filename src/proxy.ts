@@ -47,7 +47,7 @@ const websocket = {
       warn("No controller.drain method");
     }
   },
-  perMessageDeflate: true,
+  perMessageDeflate: false,
 };
 
 export const startProxy = (
