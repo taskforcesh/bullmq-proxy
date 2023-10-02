@@ -1,0 +1,40 @@
+{
+  "name": "bullmq-proxy-client",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "author": "Manuel Astudillo <manuel@optimalbits.com>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "bun --watch test/test.ts"
+  },
+  "dependencies": {
+    "@taskforcesh/message-broker": "^1.0.1",
+    "bullmq": "^4.11.4",
+    "chalk": "^2.4.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^8.0.0",
+    "@commitlint/config-conventional": "^8.0.0",
+    "@types/chalk": "^2.2.0",
+    "bun-types": "^1.0.3",
+    "husky": "^2.4.1",
+    "ts-node": "^8.2.0",
+    "typescript": "latest"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "release": {
+    "branch": "next",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm"
+    ]
+  }
+}
+  
