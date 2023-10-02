@@ -62,8 +62,6 @@ func ConnectWebSocket[T any](url string) *WebSocket[T] {
 	if err != nil {
 		log.Fatal("Error connecting to WebSocket:", err)
 	}
-
-	conn.EnableWriteCompression(true)
 	
 	var ws = &WebSocket[T]{
 		conn: conn,
