@@ -1,6 +1,5 @@
-import { expect } from "chai";
-import { describe, it, beforeEach } from "bun:test";
-import { RouteMatcher } from "../src/utils/router-matcher";
+import { describe, it, beforeEach, expect } from "bun:test";
+import { RouteMatcher } from "./router-matcher";
 
 describe("RouteMatcher", () => {
   let matcher: RouteMatcher;
@@ -15,15 +14,23 @@ describe("RouteMatcher", () => {
 
   it("should correctly match and extract queuename for queueRoute", () => {
     const result = matcher.match("/queues/test%20queue");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "queueRoute",
       params: { queueName: "test%20queue" },
     });
   });
 
+  it("should correctly match and extract queuename for queueRoute using method post", () => {
+    const result = matcher.match("/queues/testQueue", "post");
+    expect(result).toEqual({
+      name: "queueRoute",
+      params: { queueName: "testQueue" },
+    });
+  });
+
   it("should correctly match and extract queuename for jobsRoute", () => {
     const result = matcher.match("/queues/testQueue/jobs");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "jobsRoute",
       params: { queuename: "testQueue" },
     });
@@ -31,7 +38,7 @@ describe("RouteMatcher", () => {
 
   it("should correctly match and extract queuename for eventsRoute", () => {
     const result = matcher.match("/queues/testQueue/events");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "eventsRoute",
       params: { queuename: "testQueue" },
     });
@@ -39,7 +46,7 @@ describe("RouteMatcher", () => {
 
   it("should match and extract queuename and concurrency for processRoute", () => {
     const result = matcher.match("/queues/testQueue/process/5");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "processRoute",
       params: {
         queuename: "testQueue",
@@ -50,12 +57,12 @@ describe("RouteMatcher", () => {
 
   it("should return null for unmatched path", () => {
     const result = matcher.match("/unmatched/pathname");
-    expect(result).to.be.null;
+    expect(result).toBeNull();
   });
 
   it("should match and extract string concurrency for processRoute", () => {
     const result = matcher.match("/queues/testQueue/process/async");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "processRoute",
       params: {
         queuename: "testQueue",
@@ -68,7 +75,7 @@ describe("RouteMatcher", () => {
     const result = matcher.match(
       "/queues/testQueue/jobs?type=urgent&priority=high"
     );
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "jobsRoute",
       params: { queuename: "testQueue" },
       query: {
@@ -79,7 +86,7 @@ describe("RouteMatcher", () => {
   });
   it("should return empty query object when no query parameters are present", () => {
     const result = matcher.match("/queues/testQueue/jobs");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "jobsRoute",
       params: { queuename: "testQueue" },
       // No 'query' property is expected here now
@@ -89,7 +96,7 @@ describe("RouteMatcher", () => {
   it("should handle query parameters without path parameters", () => {
     matcher.addRoute("listRoute", "/list");
     const result = matcher.match("/list?category=electronics&page=2");
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "listRoute",
       params: {},
       query: {
@@ -103,7 +110,7 @@ describe("RouteMatcher", () => {
     const result = matcher.match(
       "/queues/testQueue/jobs?events=waiting,completed,active"
     );
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "jobsRoute",
       params: { queuename: "testQueue" },
       query: {
@@ -116,7 +123,7 @@ describe("RouteMatcher", () => {
     const result = matcher.match(
       "/queues/testQueue/jobs?events=waiting,completed,active&type=urgent"
     );
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "jobsRoute",
       params: { queuename: "testQueue" },
       query: {
@@ -130,7 +137,7 @@ describe("RouteMatcher", () => {
     const result = matcher.match(
       "/queues/testQueue/jobs?events=waiting, completed , active"
     );
-    expect(result).to.deep.equal({
+    expect(result).toEqual({
       name: "jobsRoute",
       params: { queuename: "testQueue" },
       query: {

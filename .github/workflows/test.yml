@@ -25,4 +25,6 @@ jobs:
       - uses: oven-sh/setup-bun@v1
       - run: bun install
       - run: cd node_modules/@taskforcesh/message-broker && bun run postinstall
+      - run: bun run tsc
       - run: bun test
+      

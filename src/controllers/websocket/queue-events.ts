@@ -2,9 +2,9 @@ import { ServerWebSocket } from "bun";
 import { MessageBroker } from "@taskforcesh/message-broker";
 import { QueueEvents, ConnectionOptions, QueueEventsListener } from "bullmq";
 
-import { WebSocketBehaviour } from "../interfaces/websocket-behaviour";
-import { send } from "./utils";
-import { log } from "../utils/log";
+import { WebSocketBehaviour } from "../../interfaces/websocket-behaviour";
+import { send } from "../utils";
+import { info } from "../../utils/log";
 
 export interface QueueEventsWebSocketData {
   connection: ConnectionOptions;
@@ -12,12 +12,19 @@ export interface QueueEventsWebSocketData {
   queueName: string;
   events?: (keyof QueueEventsListener)[];
   mb: MessageBroker<object>;
+  searchParams: URLSearchParams;
 }
 
 export const openQueueEvents = async (
   ws: ServerWebSocket<QueueEventsWebSocketData>
 ) => {
-  const { connection, queueName } = ws.data;
+  const { connection, queueName, searchParams } = ws.data;
+
+  const eventsList = searchParams.get("events")?.split(",") || [];
+  info(
+    `Queue events connected for queue ${queueName} with events ${eventsList}`
+  );
+
   const queueEvents = (ws.data.queueEvents = new QueueEvents(queueName, {
     connection,
   }));
@@ -39,7 +46,7 @@ export const openQueueEvents = async (
         { noack: true }
       );
     };
-    log(`Subscribing to event: ${event}, for queue: ${queueName}`);
+    info(`Subscribing to event: ${event}, for queue: ${queueName}`);
     queueEvents.on(event, eventHandler);
     cleanUps.push(() => queueEvents.off(event, eventHandler));
   });
@@ -58,7 +65,7 @@ export const QueueEventsController: WebSocketBehaviour = {
   },
 
   close: async (ws, code, message) => {
-    log(
+    info(
       `WebSocket closed for queue events (${ws.data.queueName}) with code ${code}${message ? `and message ${Buffer.from(
         message
       ).toString()}` : ""}`

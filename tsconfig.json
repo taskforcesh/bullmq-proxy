@@ -2,9 +2,9 @@
   "extends": "@tsconfig/node-lts/tsconfig.json",
 
   "compilerOptions": {
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "target": "es6",
+    "module": "esnext",
+    "target": "esnext",
+    "lib": ["ESNext", "dom", "WebWorker"],
     "noImplicitAny": true,
     "moduleResolution": "node",
     "sourceMap": true,

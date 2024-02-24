@@ -1,109 +1,103 @@
 import IORedis from "ioredis";
 
 import {
-    QueueController,
-    WorkerController,
-    QueueEventsController,
+  QueueController,
+  WorkerController,
+  QueueEventsController,
 } from "./controllers";
 import { RouteMatcher } from "./utils/router-matcher";
-import { log, warn } from "./utils/log";
+import { warn } from "./utils/log";
 import { Server } from "bun";
+import queuesRoutes from "./routes/queues-routes";
+import asciiArt from "./ascii-art";
+import workersRoutes from "./routes/workers-routes";
 
 const pkg = require("../package.json");
 
 const routeMatcher = new RouteMatcher();
 
-routeMatcher.addRoute<void>("health", "/");
+// Standard HTTP Routes
+queuesRoutes(routeMatcher);
+workersRoutes(routeMatcher);
 
-routeMatcher.addRoute<{ queueName: string }>("queue", "/queues/:queueName");
-routeMatcher.addRoute<{ queueName: string; concurrency: number }>(
-    "worker",
-    "/queues/:queueName/process/:concurrency"
+// WebSocket Routes
+routeMatcher.addWebSocketRoute<{ queueName: string }>("queue", "/ws/queues/:queueName", QueueController);
+routeMatcher.addWebSocketRoute<{ queueName: string; concurrency: number }>(
+  "worker",
+  "/ws/queues/:queueName/process/:concurrency", WorkerController
 );
-routeMatcher.addRoute<{ queueName: string }>(
-    "queue-events",
-    "/queues/:queueName/events"
+routeMatcher.addWebSocketRoute<{ queueName: string }>(
+  "queue-events",
+  "/ws/queues/:queueName/events", QueueEventsController
 );
 
 export const fetchHandler = (connection: IORedis, authTokens: string[] = []) => async (req: Request, server: Server) => {
-    const url = new URL(req.url);
-    const { searchParams } = url;
+  const url = new URL(req.url);
+  const { searchParams } = url;
+  const { method } = req;
 
-    const from =
-        req.headers.get("x-forwarded-for") || req.headers.get("host");
+  if (url.pathname === "/" && method === "GET") {
+    return new Response(
+      `${asciiArt}\nBullMQ Proxy (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version
+      }`,
+      { status: 200 }
+    );
+  }
 
-    // TODO: We would like to move this auth to the websocket open method
-    // but closing the websocket there leads to errors in the client.
-    const token = searchParams.get("token");
-    if (!token) {
-        warn(
-            `Unauthorized request (missing token) to path ${url.pathname.toString()} from ${from}`
-        );
-        return new Response("Unauthorized", { status: 401 });
-    }
+  const from =
+    req.headers.get("x-forwarded-for") || req.headers.get("host");
 
-    if (!authTokens.includes(token!)) {
-        warn(
-            `Unauthorized request (invalid token) to path ${url.pathname.toString()} from ${from}`
-        );
-        return new Response("Unauthorized", { status: 401 });
-    }
+  const token = searchParams.get("token") || req.headers.get("authorization")?.split("Bearer ")[1];
+  if (!token) {
+    warn(
+      `Unauthorized request (missing token) to path ${url.pathname.toString()} from ${from}`
+    );
+    return new Response("Unauthorized", { status: 401 });
+  }
 
-    // Choose controller based on path
-    const route = routeMatcher.match(url.pathname);
-    if (!route) {
-        warn(
-            `Not found request to path ${url.pathname.toString()} from ${req.headers.get("x-forwarded-for") || req.headers.get("host")
-            }`
-        );
-        return new Response("Not found", { status: 404 });
-    }
+  if (!authTokens.includes(token!)) {
+    warn(
+      `Unauthorized request (invalid token) to path ${url.pathname.toString()} from ${from}`
+    );
+    return new Response("Unauthorized", { status: 401 });
+  }
 
-    const queueName = route.params?.queueName;
-    let controller;
-    let events;
-    const concurrency = parseInt(route.params.concurrency, 10) || 1;
-    switch (route.name) {
-        case "worker":
-            controller = WorkerController;
-            log(
-                `Worker connected for queue ${queueName} with concurrency ${concurrency}`
-            );
-            break;
-        case "queue":
-            controller = QueueController;
-            log(`Queue connected for queue ${queueName}`);
-            break;
-        case "queue-events":
-            controller = QueueEventsController;
-            events = searchParams.get("events")?.split(",") || [];
-            log(
-                `Queue events connected for queue ${queueName} with events ${events}`
-            );
-            break;
-        case "health":
-            return new Response(
-                `BullMQ Proxy (c) ${new Date().getFullYear()} Taskforce.sh v${pkg.version
-                }`,
-                { status: 200 }
-            );
-        default:
-            return new Response("", { status: 404 });
-    }
+  // Choose controller based on path
+  const route = routeMatcher.match(url.pathname, method);
+  if (!route) {
+    warn(
+      `Not found request to path ${url.pathname.toString()} from ${req.headers.get("x-forwarded-for") || req.headers.get("host")
+      }`
+    );
+    return new Response("Not found", { status: 404 });
+  }
 
+  const queueName = route.params?.queueName;
+  let controller;
+  let events;
+  const concurrency = parseInt(route.params.concurrency, 10) || 1;
+
+  if (route.websocketHandler) {
+    controller = route.websocketHandler;
     if (
-        server.upgrade(req, {
-            data: {
-                route,
-                controller,
-                queueName,
-                concurrency,
-                connection,
-                events,
-            },
-        })
+      server.upgrade(req, {
+        data: {
+          route,
+          controller,
+          queueName,
+          concurrency,
+          connection,
+          events,
+          searchParams
+        },
+      })
     ) {
-        return; // Do not return a Response to signal that the upgrade is successful
+      return; // Do not return a Response to signal that the upgrade is successful
     }
     return new Response("Upgrade failed :(", { status: 500 });
+  } else if (route.httpHandler) {
+    return route.httpHandler({ req, params: route.params, searchParams, redisClient: connection });
+  } else {
+    return new Response("Not found", { status: 404 });
+  }
 }
