@@ -2,8 +2,8 @@ import { WebSocketHandler, ServerWebSocket } from "bun";
 import { MessageBroker } from "@taskforcesh/message-broker";
 import { Worker, ConnectionOptions, Job } from "bullmq";
 
-import { send } from "./utils";
-import { log } from "../utils/log";
+import { send } from "../utils";
+import { info } from "../../utils/log";
 
 export interface WorkerWebSocketData {
   connection: ConnectionOptions;
@@ -15,6 +15,10 @@ export interface WorkerWebSocketData {
 
 export const openWorker = async (ws: ServerWebSocket<WorkerWebSocketData>) => {
   const { connection, queueName, concurrency } = ws.data;
+
+  info(
+    `Worker connected for queue ${queueName} with concurrency ${concurrency}`
+  );
 
   const mb = (ws.data.mb = new MessageBroker<object>(async (msg: string | Buffer) =>
     send(ws, msg)
@@ -58,7 +62,7 @@ export const WorkerController: WebSocketHandler<WorkerWebSocketData> = {
     }
   },
   close: (ws: ServerWebSocket<WorkerWebSocketData>, code, message) => {
-    log(
+    info(
       `WebSocket closed for worker (${ws.data.queueName}) with code ${code}${message ? `and message ${Buffer.from(
         message
       ).toString()}` : ""}`

@@ -3,10 +3,10 @@ import { Queue, ConnectionOptions } from "bullmq";
 import { Value } from "@sinclair/typebox/value";
 import { ServerWebSocket } from "bun";
 
-import { WebSocketBehaviour } from "../interfaces/websocket-behaviour";
-import { respond, send } from "./utils";
-import { log } from "../utils/log";
-import { QueueSchema, QueueSchemaType } from "./commands";
+import { WebSocketBehaviour } from "../../interfaces/websocket-behaviour";
+import { respond, send } from "../utils";
+import { info } from "../../utils/log";
+import { QueueSchema, QueueSchemaType } from "../commands";
 
 export interface QueueWebSocketData {
   connection: ConnectionOptions;
@@ -17,6 +17,8 @@ export interface QueueWebSocketData {
 
 export const openQueue = async (ws: ServerWebSocket<QueueWebSocketData>) => {
   const { connection, queueName } = ws.data;
+  info(`Queue connected for queue ${queueName}`);
+
   ws.data.queue = new Queue(queueName, { connection });
   ws.data.mb = new MessageBroker<object>(async (msg: string | Buffer) => send(ws, msg));
 };
@@ -43,9 +45,10 @@ export const QueueController: WebSocketBehaviour = {
       }
 
       const queue = ws.data.queue;
-      const { fn, args } = parsedMessage.data;
+      const { fn, args }: { fn: string, args: any[] } = parsedMessage.data;
       try {
-        const result = await queue[fn].apply(queue, args);
+        const queueMethod = (<any>queue)[fn] as Function
+        const result = await queueMethod.apply(queue, args);
         respond(ws, parsedMessage.id, { ok: result });
       } catch (err) {
         respond(ws, parsedMessage.id, { err: (<Error>err).message });
@@ -60,7 +63,7 @@ export const QueueController: WebSocketBehaviour = {
   },
 
   close: async (ws, code, message) => {
-    log(
+    info(
       `WebSocket closed for queue (${ws.data.queueName}) with code ${code}${message ? `and message ${Buffer.from(
         message
       ).toString()}` : ""}`

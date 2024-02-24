@@ -4,6 +4,8 @@ import chalk from "chalk";
 import { WebSocketBehaviour } from "./interfaces/websocket-behaviour";
 import { warn } from "./utils/log";
 import { fetchHandler } from "./fetch-handler";
+import asciiArt from "./ascii-art";
+import { WorkerHttpController } from "./controllers/http/worker-http-controller";
 
 const pkg = require("../package.json");
 
@@ -50,17 +52,21 @@ const websocket = {
   perMessageDeflate: false,
 };
 
-export const startProxy = (
+export const startProxy = async (
   port: number,
   connection: IORedis,
   authTokens: string[] = [],
 ) => {
+  console.log(chalk.gray(asciiArt))
   console.log(
     chalk.green(
-      `Starting BullMQ Proxy on port ${port} (c) ${new Date().getFullYear()} Taskforce.sh v${pkg.version
+      `Running BullMQ Proxy on port ${port} (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version
       }`
     )
   );
+
+  await WorkerHttpController.init(connection);
+
   Bun.serve<WebSocketData>({
     port,
     fetch: fetchHandler(connection, authTokens),
