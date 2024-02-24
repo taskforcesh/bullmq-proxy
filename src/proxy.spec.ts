@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, expect, jest } from "bun:test";
 
-import * as MBModule from '@taskforcesh/message-broker';
+import * as MBModule from './controllers/websocket/message-broker';
 import { startProxy } from "./proxy";
 import { Redis } from "ioredis";
 

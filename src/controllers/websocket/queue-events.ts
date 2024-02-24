@@ -1,5 +1,5 @@
 import { ServerWebSocket } from "bun";
-import { MessageBroker } from "@taskforcesh/message-broker";
+import { MessageBroker } from "./message-broker";
 import { QueueEvents, ConnectionOptions, QueueEventsListener } from "bullmq";
 
 import { WebSocketBehaviour } from "../../interfaces/websocket-behaviour";

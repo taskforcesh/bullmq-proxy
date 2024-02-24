@@ -1,4 +1,4 @@
-import { Message, MessageBroker } from "@taskforcesh/message-broker";
+import { Message, MessageBroker } from "./message-broker";
 import { Queue, ConnectionOptions } from "bullmq";
 import { Value } from "@sinclair/typebox/value";
 import { ServerWebSocket } from "bun";

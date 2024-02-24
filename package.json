@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@sinclair/typebox": "^0.31.17",
-    "@taskforcesh/message-broker": "https://github.com/taskforcesh/message-broker.git#master",
     "bullmq": "^5.3.2",
+    "chalk": "^5.3.0",
     "ioredis": "^5.3.2"
   },
   "trustedDependencies": [
