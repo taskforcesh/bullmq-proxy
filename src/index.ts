@@ -1,19 +1,35 @@
-import IORedis from "ioredis";
-import { startProxy } from "./proxy";
+import IORedis, { Cluster, Redis } from "ioredis";
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  tls: process.env.REDIS_TLS === "true" ? {} : undefined,
-  retryStrategy: () => 1000,
-  maxRetriesPerRequest: null,
-});
+import { startProxy } from "./proxy";
+import { config } from "./config";
+import { error, info } from "./utils/log";
+
+const pkg = require("../package.json");
+
+let connection: Redis | Cluster;
+
+if (config.redis.uri) {
+  connection = new IORedis(config.redis.uri, {
+    retryStrategy: () => 1000,
+    maxRetriesPerRequest: null,
+  });
+} else {
+  connection = new IORedis({
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password,
+    tls: config.redis.tls,
+    retryStrategy: () => 1000,
+    maxRetriesPerRequest: null,
+  });
+}
 
 connection.on("error", (err) => {
   console.error("Redis connection error", err);
 })
 
-const port = parseInt(process.env.PORT || "8080", 10);
-
-startProxy(port, connection, (process.env.AUTH_TOKENS || "").split(","));
+startProxy(config.port, connection, config.authTokens).then(() => {
+  info(`Running BullMQ Proxy on port ${config.port} (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version}`);
+}).catch((err) => {
+  error(`Error starting server ${(<Error>err).message}`);
+});

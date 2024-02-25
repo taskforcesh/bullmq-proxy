@@ -2,8 +2,9 @@
 import { describe, it, beforeEach, expect, jest, afterEach, mock } from 'bun:test';
 import { QueueHttpController } from './queue-http-controller';
 import { JobJson } from 'bullmq';
+import { Redis } from 'ioredis';
 
-describe('QueueHttpController.addJobs', () => {
+describe.only('QueueHttpController.addJobs', () => {
   let fakeReq;
   let opts: any;
 
@@ -16,7 +17,7 @@ describe('QueueHttpController.addJobs', () => {
     opts = {
       req: fakeReq,
       params: { queueName: 'testQueue' },
-      redisClient: {}, // Mock Redis client as needed
+      redisClient: new Redis(),
     };
   });
 

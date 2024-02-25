@@ -5,12 +5,13 @@ import { debug } from "../../utils/log";
 
 import { HttpHandlerOpts, WorkerMetadata } from "../../interfaces";
 import { validateWorkerMetadata } from "../../validators";
+import { config } from "../../config";
 
-const debugEnabled = process.env.DEBUG === 'true';
+const debugEnabled = config.debugEnabled;
 
 const workers: { [queueName: string]: Worker } = {};
 
-const workerMetadataKey = process.env.WORKER_METADATA_KEY || 'bullmq-proxy:workers';
+const workerMetadataKey = config.workerMetadataKey;
 
 // Gracefully close all workers
 process.on('exit', async () => {
@@ -59,7 +60,7 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
     } finally {
       clearTimeout(timeoutId);
     }
-  }, { ...workerOptions, connection });
+  }, { ...workerOptions, connection, prefix: config.defaultQueuePrefix });
 
   if (debugEnabled) {
     worker.on('failed', (job, err) => {

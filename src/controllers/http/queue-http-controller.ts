@@ -3,8 +3,9 @@ import { JobState, Queue } from "bullmq";
 import { LRUCache } from "../../cache";
 import { HttpHandlerOpts } from "../../interfaces/http-handler-opts";
 import { validateJob, validateQueueName } from "../../validators";
+import { config } from "../../config";
 
-const cache = new LRUCache<Queue>(process.env.QUEUE_CACHE_SIZE ? parseInt(process.env.QUEUE_CACHE_SIZE) : 100, async (queueName, queue) => {
+const cache = new LRUCache<Queue>(config.queueCacheSize, async (queueName, queue) => {
   await queue.close();
 });
 
@@ -24,7 +25,7 @@ export const QueueHttpController = {
 
     let queue = cache.get(queueName);
     if (!queue) {
-      queue = new Queue(queueName, { connection: opts.redisClient });
+      queue = new Queue(queueName, { connection: opts.redisClient, prefix: config.defaultQueuePrefix });
       cache.put(queueName, queue);
     }
 

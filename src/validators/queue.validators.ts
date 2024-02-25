@@ -1,15 +1,13 @@
 import { BackoffOptions, JobJson, JobsOptions, RepeatOptions } from "bullmq";
-
-const minQueueNameLength = process.env.MIN_QUEUE_NAME_LENGTH ? parseInt(process.env.MIN_QUEUE_NAME_LENGTH) : 3;
-const maxQueueNameLength = process.env.MAX_QUEUE_NAME_LENGTH ? parseInt(process.env.MAX_QUEUE_NAME_LENGTH) : 100;
+import { config } from "../config";
 
 export const validateQueueName = (queueName: string) => {
-  if (queueName.length < minQueueNameLength) {
-    throw new Error(`queue name must be at least ${minQueueNameLength} characters long`);
+  if (queueName.length < config.minQueueNameLength) {
+    throw new Error(`queue name must be at least ${config.minQueueNameLength} characters long`);
   }
 
-  if (queueName.length > maxQueueNameLength) {
-    throw new Error(`queue name must be at most ${maxQueueNameLength} characters long`);
+  if (queueName.length > config.maxQueueNameLength) {
+    throw new Error(`queue name must be at most ${config.maxQueueNameLength} characters long`);
   }
 }
 
