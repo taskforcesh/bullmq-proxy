@@ -11,6 +11,7 @@ export const validateQueueName = (queueName: string) => {
   }
 }
 
+const allowedJobFields = new Set(["name", "data", "opts"]);
 export const validateJob = (job: JobJson) => {
   // Validate required fields
   const requiredFields: (keyof JobJson)[] = ["name", "data"];
@@ -21,9 +22,8 @@ export const validateJob = (job: JobJson) => {
   }
 
   // Validate no extra fields are present
-  const allowedFields: (keyof JobJson)[] = ["name", "data", "opts"];
   for (const field in job) {
-    if (!allowedFields.includes(field as keyof JobJson)) {
+    if (!allowedJobFields.has(field as keyof JobJson)) {
       throw new Error(`Unexpected field: ${field}`);
     }
   }
@@ -34,10 +34,11 @@ export const validateJob = (job: JobJson) => {
   }
 }
 
+const allowedFields: Set<(keyof RepeatOptions)> = new Set(["every", "limit", "key", "immediately"]);
 export const validateRepeatOpts = (opts: RepeatOptions) => {
-  const allowedFields: (keyof RepeatOptions)[] = ["every", "limit", "key", "immediately"];
+
   for (const field in opts) {
-    if (!allowedFields.includes(field as keyof RepeatOptions)) {
+    if (!allowedFields.has(field as keyof RepeatOptions)) {
       throw new Error(`Unexpected field: opts.${field}`);
     }
   }
@@ -66,19 +67,21 @@ export const validateRepeatOpts = (opts: RepeatOptions) => {
   }
 }
 
+const allowedJobOptsFields: Set<(keyof JobsOptions)> = new Set([
+  "delay",
+  "lifo",
+  "priority",
+  "attempts",
+  "backoff",
+  "jobId",
+  // "repeat", // Disabled as we need to support repeatable jobs on addBulk.
+  "removeOnComplete",
+  "removeOnFail"]);
+
 export const validateJobOpts = (opts: JobsOptions) => {
-  const allowedFields: (keyof JobsOptions)[] = [
-    "delay",
-    "lifo",
-    "priority",
-    "attempts",
-    "backoff",
-    "jobId",
-    // "repeat", // Disabled as we need to support repeatable jobs on addBulk.
-    "removeOnComplete",
-    "removeOnFail"];
+
   for (const field in opts) {
-    if (!allowedFields.includes(field as keyof JobsOptions)) {
+    if (!allowedJobOptsFields.has(field as keyof JobsOptions)) {
       throw new Error(`Unexpected field: opts.${field}`);
     }
   }

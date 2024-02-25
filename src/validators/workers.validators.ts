@@ -1,23 +1,23 @@
 import { WorkerMetadata, WorkerEndpoint, WorkerSimpleOptions } from "../interfaces";
 import { validateQueueName } from "./queue.validators";
 
+const validProtocols = new Set(['http:', 'https:']);
 export function isValidUrl(s: string) {
-  const validProtocols = ['http:', 'https:'];
   try {
     const url = new URL(s);
-    return validProtocols.includes(url.protocol);
+    return validProtocols.has(url.protocol);
   } catch (e) {
     return false;
   }
 }
 
+const allowedOnFinishFields = new Set(['count', 'age']);
 export const validateRemoveOnFinish = (removeOnFinish: {
   count?: number;
   age?: number;
 }, field: "removeOnComplete" | "removeOnFail") => {
-  const allowedFields = ['count', 'age'];
   for (const allowedField in removeOnFinish) {
-    if (!allowedFields.includes(allowedField)) {
+    if (!allowedOnFinishFields.has(allowedField)) {
       throw new Error(`Invalid field: ${field}.${allowedField}`);
     }
   }
@@ -31,10 +31,16 @@ export const validateRemoveOnFinish = (removeOnFinish: {
   }
 }
 
+const allowedWorkerOptionsFields = new Set([
+  'concurrency',
+  'removeOnComplete',
+  'removeOnFail',
+  'limiter',
+  'maxStalledCount'
+]);
 export const validateWorkerOptions = (workerOptions: WorkerSimpleOptions) => {
-  const allowedFields = ['concurrency', 'removeOnComplete', 'removeOnFail', 'limiter', 'maxStalledCount'];
   for (const field in workerOptions) {
-    if (!allowedFields.includes(field)) {
+    if (!allowedWorkerOptionsFields.has(field)) {
       throw new Error(`Invalid field: ${field}`);
     }
   }
@@ -64,6 +70,9 @@ export const validateWorkerOptions = (workerOptions: WorkerSimpleOptions) => {
   }
 }
 
+const validHttpMethods = new Set(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
+const allowedEndpointFields = new Set(['url', 'method', 'headers', 'timeout']);
+
 export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
   const requiredFields: (keyof WorkerEndpoint)[] = ['url', 'method'];
   for (const field of requiredFields) {
@@ -76,14 +85,12 @@ export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
     throw new Error('Invalid URL');
   }
 
-  const validHttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-  if (!validHttpMethods.includes(workerEndpoint.method.toUpperCase())) {
+  if (!validHttpMethods.has(workerEndpoint.method.toUpperCase())) {
     throw new Error(`Invalid HTTP method ${workerEndpoint.method}`);
   }
 
-  const allowedFields = ['url', 'method', 'headers', 'timeout'];
   for (const field in workerEndpoint) {
-    if (!allowedFields.includes(field)) {
+    if (!allowedEndpointFields.has(field)) {
       throw new Error(`Invalid field: ${field}`);
     }
   }
@@ -93,6 +100,7 @@ export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
   }
 }
 
+const allowedWorkerMetaddaFields = new Set(['queue', 'endpoint', 'opts']);
 export const validateWorkerMetadata = (workerMetadata: WorkerMetadata) => {
   const requiredFields: (keyof WorkerMetadata)[] = ['queue', 'endpoint'];
   for (const field of requiredFields) {
@@ -102,9 +110,8 @@ export const validateWorkerMetadata = (workerMetadata: WorkerMetadata) => {
   }
 
   // Check that no extra fields are present
-  const allowedFields = ['queue', 'endpoint', 'opts'];
   for (const field in workerMetadata) {
-    if (!allowedFields.includes(field)) {
+    if (!allowedWorkerMetaddaFields.has(field)) {
       throw new Error(`Invalid field: ${field}`);
     }
   }
