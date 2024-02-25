@@ -14,10 +14,14 @@ permissions:
   contents: read # to fetch code (actions/checkout)
 
 jobs:
-  test:
+  test-redis:
     runs-on: ubuntu-latest
 
-    name: Testing with Bun
+    name: Testing with Bun, redis@${{ matrix.redis-version }}
+
+    strategy:
+      matrix:
+        redis-version: [7-alpine, 6-alpine]
 
     steps:
       - name: Checkout repository
@@ -26,4 +30,25 @@ jobs:
       - run: bun install
       - run: bun run tsc
       - run: bun test
-      
+
+  test-dragonflydb:
+    runs-on: ubuntu-latest
+
+    name: Testing with Bun, dragonflydb@latest
+
+    services:
+      dragonflydb:
+        image: docker.dragonflydb.io/dragonflydb/dragonfly
+        env:
+          DFLY_cluster_mode: emulated
+          DFLY_lock_on_hashtags: true
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3 # v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun run tsc
+      - run: QUEUE_PREFIX={b} bun test
