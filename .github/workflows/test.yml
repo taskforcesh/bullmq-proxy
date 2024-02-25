@@ -27,6 +27,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3 # v3
       - uses: oven-sh/setup-bun@v1
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.7.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
       - run: bun install
       - run: bun run tsc
       - run: bun test
