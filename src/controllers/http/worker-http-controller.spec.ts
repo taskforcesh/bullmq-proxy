@@ -4,17 +4,10 @@ import { WorkerHttpController } from './worker-http-controller';
 
 describe('WorkerHttpController.init', () => {
 
-  beforeAll(() => {
-
-  });
-
-  afterAll(() => {
-    mock.restore();
-  });
-
-
   it('should initialize workers from Redis metadata', async () => {
-    await expect(WorkerHttpController.init(new Redis())).resolves.toBeUndefined;
+    await expect(WorkerHttpController.init(new Redis({
+      maxRetriesPerRequest: null,
+    }))).resolves.toBeUndefined;
   });
 });
 
@@ -26,12 +19,11 @@ mock.module('node-fetch', () => jest.fn(() => Promise.resolve({
 
 describe('WorkerHttpController.addWorker', () => {
 
+  let redisClient: Redis;
   beforeAll(() => {
-
-  });
-
-  afterAll(() => {
-    mock.restore();
+    redisClient = new Redis({
+      maxRetriesPerRequest: null
+    });
   });
 
   it('should add a worker with valid metadata', async () => {
@@ -46,7 +38,7 @@ describe('WorkerHttpController.addWorker', () => {
       })
     } as Request;
 
-    const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient: new Redis(), params: {} });
+    const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient, params: {} });
     expect(response).toBeDefined();
     expect(await response.text()).toBe("OK");
     expect(response!.status).toBe(200); // Assuming 200 is the success status code
@@ -57,7 +49,7 @@ describe('WorkerHttpController.addWorker', () => {
       json: () => Promise.resolve({}) // Invalid metadata
     } as Request;
 
-    const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient: new Redis(), params: {} });
+    const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient, params: {} });
     console.log(await response.text());
     expect(response).toBeDefined();
     expect(response!.status).toBe(400);
@@ -69,7 +61,9 @@ describe('WorkerHttpController.removeWorker', () => {
     const opts = {
       req: {} as Request,
       params: { queueName: 'existingQueue' },
-      redisClient: new Redis()
+      redisClient: new Redis({
+        maxRetriesPerRequest: null
+      })
     };
 
     const response = await WorkerHttpController.removeWorker(opts);
@@ -77,4 +71,3 @@ describe('WorkerHttpController.removeWorker', () => {
     expect(response!.status).toBe(200); // Assuming 200 indicates success
   });
 });
-
