@@ -1,6 +1,10 @@
 import { Redis } from 'ioredis';
-import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test";
+import { describe, it, jest, mock, expect, beforeAll } from "bun:test";
 import { WorkerHttpController } from './worker-http-controller';
+
+const fakeReq = {
+  json: () => Promise.resolve({}) // Invalid metadata
+} as Request;
 
 describe('WorkerHttpController.init', () => {
 
@@ -45,12 +49,7 @@ describe('WorkerHttpController.addWorker', () => {
   });
 
   it('should return a 400 response for invalid metadata', async () => {
-    const fakeReq = {
-      json: () => Promise.resolve({}) // Invalid metadata
-    } as Request;
-
     const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient, params: {} });
-    console.log(await response.text());
     expect(response).toBeDefined();
     expect(response!.status).toBe(400);
   });
@@ -66,8 +65,11 @@ describe('WorkerHttpController.removeWorker', () => {
       })
     };
 
-    const response = await WorkerHttpController.removeWorker(opts);
-    expect(response).toBeDefined();
-    expect(response!.status).toBe(200); // Assuming 200 indicates success
+    const responseAdd = await WorkerHttpController.addWorker({ req: fakeReq, redisClient: new Redis(), params: {} });
+    expect(responseAdd).toBeDefined();
+
+    const responseRemove = await WorkerHttpController.removeWorker(opts);
+    expect(responseRemove).toBeDefined();
+    expect(responseRemove!.status).toBe(200); // Assuming 200 indicates success
   });
 });
