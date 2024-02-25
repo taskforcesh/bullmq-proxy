@@ -1,7 +1,7 @@
 version: '3'
 services:
   proxy:
-    build: .
+    image: ghcr.io/taskforcesh/bullmq-proxy:latest
     ports:
       - 8080:8080
     environment:
@@ -12,4 +12,4 @@ services:
       REDIS_TLS: ${REDIS_TLS}
       AUTH_TOKENS: ${AUTH_TOKENS}
   redis:
-    image: "redis:alpine"
+    image: 'redis:alpine'
