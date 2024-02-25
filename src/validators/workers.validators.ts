@@ -1,6 +1,4 @@
-import { WorkerMetadata } from "../interfaces";
-import { WorkerEndpoint } from "../interfaces";
-import { WorkerSimpleOptions } from "../interfaces";
+import { WorkerMetadata, WorkerEndpoint, WorkerSimpleOptions } from "../interfaces";
 import { validateQueueName } from "./queue.validators";
 
 export function isValidUrl(s: string) {
