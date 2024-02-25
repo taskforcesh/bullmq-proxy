@@ -2,8 +2,15 @@ import { Redis } from 'ioredis';
 import { describe, it, jest, mock, expect, beforeAll } from "bun:test";
 import { WorkerHttpController } from './worker-http-controller';
 
-const fakeReq = {
-  json: () => Promise.resolve({}) // Invalid metadata
+const fakeAddValidReq = {
+  json: () => Promise.resolve({
+    queue: 'validQueue',
+    endpoint: {
+      url: 'http://example.com',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }
+  })
 } as Request;
 
 describe('WorkerHttpController.init', () => {
@@ -31,24 +38,18 @@ describe('WorkerHttpController.addWorker', () => {
   });
 
   it('should add a worker with valid metadata', async () => {
-    const fakeReq = {
-      json: () => Promise.resolve({
-        queue: 'validQueue',
-        endpoint: {
-          url: 'http://example.com',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      })
-    } as Request;
 
-    const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient, params: {} });
+    const response = await WorkerHttpController.addWorker({ req: fakeAddValidReq, redisClient, params: {} });
     expect(response).toBeDefined();
     expect(await response.text()).toBe("OK");
     expect(response!.status).toBe(200); // Assuming 200 is the success status code
   });
 
   it('should return a 400 response for invalid metadata', async () => {
+    const fakeReq = {
+      json: () => Promise.resolve({}) // Invalid metadata
+    } as Request;
+
     const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient, params: {} });
     expect(response).toBeDefined();
     expect(response!.status).toBe(400);
@@ -56,20 +57,37 @@ describe('WorkerHttpController.addWorker', () => {
 });
 
 describe('WorkerHttpController.removeWorker', () => {
+  let redisClient: Redis;
+  beforeAll(() => {
+    redisClient = new Redis({
+      maxRetriesPerRequest: null
+    });
+  });
+
   it('should remove a worker successfully', async () => {
     const opts = {
       req: {} as Request,
-      params: { queueName: 'existingQueue' },
-      redisClient: new Redis({
-        maxRetriesPerRequest: null
-      })
+      params: { queueName: 'validQueue' },
+      redisClient
     };
 
-    const responseAdd = await WorkerHttpController.addWorker({ req: fakeReq, redisClient: new Redis(), params: {} });
+    const responseAdd = await WorkerHttpController.addWorker({ req: fakeAddValidReq, redisClient, params: {} });
     expect(responseAdd).toBeDefined();
 
     const responseRemove = await WorkerHttpController.removeWorker(opts);
     expect(responseRemove).toBeDefined();
     expect(responseRemove!.status).toBe(200); // Assuming 200 indicates success
+  });
+
+  it('should return 404 for non existing workers', async () => {
+    const opts = {
+      req: {} as Request,
+      params: { queueName: 'non-existing-queue' },
+      redisClient
+    };
+
+    const responseRemove = await WorkerHttpController.removeWorker(opts);
+    expect(responseRemove).toBeDefined();
+    expect(responseRemove!.status).toBe(404);
   });
 });

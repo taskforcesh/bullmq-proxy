@@ -4,7 +4,7 @@ import { QueueHttpController } from './queue-http-controller';
 import { JobJson } from 'bullmq';
 import { Redis } from 'ioredis';
 
-describe.only('QueueHttpController.addJobs', () => {
+describe('QueueHttpController.addJobs', () => {
   let fakeReq;
   let opts: any;
 
@@ -37,4 +37,3 @@ describe.only('QueueHttpController.addJobs', () => {
     expect(jobs[0]).toHaveProperty('data', 'jobData');
   });
 });
-
