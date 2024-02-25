@@ -7,8 +7,6 @@ import { fetchHandler } from "./fetch-handler";
 import asciiArt from "./ascii-art";
 import { WorkerHttpController } from "./controllers/http/worker-http-controller";
 
-const pkg = require("../package.json");
-
 type WebSocketData = {
   createdAt: number;
   params: any;
@@ -58,12 +56,6 @@ export const startProxy = async (
   authTokens: string[] = [],
 ) => {
   console.log(chalk.gray(asciiArt))
-  console.log(
-    chalk.green(
-      `Running BullMQ Proxy on port ${port} (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version
-      }`
-    )
-  );
 
   await WorkerHttpController.init(connection);
 

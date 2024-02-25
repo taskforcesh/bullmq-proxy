@@ -2,22 +2,6 @@ import { Redis } from 'ioredis';
 import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test";
 import { WorkerHttpController } from './worker-http-controller';
 
-mock.module('ioredis', () => ({
-  Redis: jest.fn(() => ({
-    hscanStream: jest.fn(() => ({
-      on: jest.fn((event, callback) => {
-        if (event === 'data') {
-          process.nextTick(callback, ['queueName', JSON.stringify({ endpoint: { url: '', method: '', headers: {} } })]);
-        } else if (event === 'end') {
-          process.nextTick(callback);
-        }
-      }),
-    })),
-    hset: jest.fn().mockResolvedValue(true),
-    hdel: jest.fn().mockResolvedValue(true),
-  })),
-}));
-
 describe('WorkerHttpController.init', () => {
 
   beforeAll(() => {
