@@ -4,7 +4,7 @@ This lightweight service works as a proxy for BullMQ queues. It has applications
 
 - Work with your queues in any language or platform that supports HTTP.
 - Run your workers in serverless environments.
-- Isolate your Redis instances and only allow BullMQ operations from untrusted sources.
+- Isolate your Redis instances and allow BullMQ operations from untrusted sources (such as external service for example a web app)
 - Implement Access Control for your queues (coming soon).
 
 The proxy provides a simple Restful HTTP API that supports the most important features available in BullMQ. You
