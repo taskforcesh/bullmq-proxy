@@ -2,9 +2,12 @@
   "name": "bullmq-proxy",
   "version": "0.1.0",
   "main": "index.js",
-  "repository": "git@github.com:taskforcesh/bullmq-proxy.git",
   "author": "Manuel Astudillo <manuel@optimalbits.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taskforcesh/bullmq-proxy.git"
+  },
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun src/index.ts",
