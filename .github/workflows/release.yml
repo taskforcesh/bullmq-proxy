@@ -11,6 +11,8 @@ jobs:
   release:
     permissions:
       contents: write # for release publishing
+      issues: write
+      pull-requests: write
 
     name: Release
     env:
