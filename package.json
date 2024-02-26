@@ -9,7 +9,9 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun src/index.ts",
     "build:declaration": "tsc --emitDeclarationOnly",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.31.17",
@@ -21,10 +23,42 @@
     "@taskforcesh/message-broker"
   ],
   "devDependencies": {
+    "@commitlint/cli": "^18.6.1",
+    "@commitlint/config-conventional": "^18.6.2",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
     "@tsconfig/node-lts": "^18.12.5",
     "@types/node": "^12.0.0",
     "bun-types": "^1.0.29",
+    "husky": "^9.0.11",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3"
+  },
+  "release": {
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/changelog",
+        {
+          "changelogFile": "docs/gitbook/changelog.md"
+        }
+      ],
+      "@semantic-release/github",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "bun.lockb",
+            "docs/gitbook/changelog.md",
+            "docs/gitbook/api/**"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ]
+    ]
   }
 }
