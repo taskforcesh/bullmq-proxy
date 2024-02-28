@@ -7,6 +7,7 @@ export const config = {
     uri: process.env.REDIS_URI || undefined,
     host: process.env.REDIS_HOST || "localhost",
     port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
+    username: process.env.REDIS_USERNAME || undefined,
     password: process.env.REDIS_PASSWORD || undefined,
     tls: process.env.REDIS_TLS === "true" ? {} : undefined,
   },
