@@ -33,7 +33,7 @@ describe("e2e", () => {
   });
 
   afterEach(async () => {
-    const queue = new Queue(queueName, { connection: redisClient });
+    const queue = new Queue(queueName, { connection: redisClient, prefix: config.defaultQueuePrefix });
     await queue.obliterate({ force: true });
 
     // We need to clean the cache to eliminate side-effects between tests
