@@ -1,23 +1,29 @@
 import { WebSocketHandler } from "bun";
-
-import { URL } from "url";
 import { HttpHandlerOpts } from "../interfaces/http-handler-opts";
+import { Cluster, Redis } from "ioredis";
 
-type HttpHandler = (opts: HttpHandlerOpts) => Promise<Response>
+type HttpHandler = (opts: HttpHandlerOpts) => Promise<Response>;
+type AuthFn = (
+  req: Request,
+  url: URL,
+  params: Record<string, string>,
+  connection: Redis | Cluster) => Promise<boolean>;
 
 type RoutePattern<T = any> = {
   name: string;
   pattern: RegExp;
   paramNames: string[];
   method?: string;
+  auth?: AuthFn;
   websocketHandler?: WebSocketHandler<T>;
   httpHandler?: HttpHandler;
 };
 
 type MatchResult = {
   name: string;
-  params: any;
+  params: Record<string, string>;
   query?: any;
+  auth?: AuthFn;
   websocketHandler?: WebSocketHandler;
   httpHandler?: HttpHandler;
 };
@@ -25,7 +31,7 @@ type MatchResult = {
 export class RouteMatcher {
   private routes: RoutePattern<any>[] = [];
 
-  addRoute<T>(name: string, pattern: string, handler?: WebSocketHandler<T> | HttpHandler): void {
+  addRoute<T>(name: string, pattern: string, handler?: WebSocketHandler<T> | HttpHandler) {
     const paramNames: string[] = [];
     const regexPattern = new RegExp(
       "^" +
@@ -46,16 +52,20 @@ export class RouteMatcher {
         websocketHandler = handler;
       }
     }
-    this.routes.push({ name, pattern: regexPattern, paramNames, httpHandler, websocketHandler });
+    const route: RoutePattern = { name, pattern: regexPattern, paramNames, httpHandler, websocketHandler };
+    this.routes.push(route);
+    return route;
   }
 
-  addWebSocketRoute<T>(name: string, pattern: string, handler: WebSocketHandler<T>): void {
-    this.addRoute<T>(name, pattern, handler);
+  addWebSocketRoute<T>(name: string, pattern: string, handler: WebSocketHandler<T>) {
+    return this.addRoute<T>(name, pattern, handler);
   }
 
-  addHttpRoute<T>(name: string, pattern: string, handler: HttpHandler, method: string = "get"): void {
-    this.addRoute<T>(name, pattern, handler);
-    this.routes[this.routes.length - 1].method = method.toLowerCase();
+  addHttpRoute<T>(name: string, pattern: string, handler: HttpHandler, method: string = "get", auth?: AuthFn) {
+    const route = this.addRoute<T>(name, pattern, handler);
+    route.method = method.toLowerCase();
+    route.auth = auth;
+    return route;
   }
 
   match(url: string, method: string = "get"): MatchResult | null {
@@ -77,6 +87,7 @@ export class RouteMatcher {
           name: route.name,
           params,
           websocketHandler: route.websocketHandler,
+          auth: route.auth,
           httpHandler: route.httpHandler,
         };
 

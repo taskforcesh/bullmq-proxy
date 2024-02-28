@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { describe, it, jest, mock, expect, beforeAll } from "bun:test";
+import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test";
 import { WorkerHttpController } from './worker-http-controller';
 
 const fakeAddValidReq = {
@@ -35,6 +35,10 @@ describe('WorkerHttpController.addWorker', () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+  });
+
+  afterAll(async () => {
+    await redisClient.quit();
   });
 
   it('should add a worker with valid metadata', async () => {

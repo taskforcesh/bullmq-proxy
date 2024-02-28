@@ -63,7 +63,7 @@ describe('Proxy', () => {
       })
     }
 
-    await startProxy(3000, <unknown>redisClientMock as Redis, ['validToken']);
+    await startProxy(3000, <unknown>redisClientMock as Redis, { skipInitWorkers: true });
     expect(Bun.serve).toHaveBeenCalledTimes(1);
 
     expect(Bun.serve).toHaveBeenCalledWith(
