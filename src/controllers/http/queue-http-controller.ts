@@ -1,13 +1,8 @@
 import { JobState, Queue } from "bullmq";
 
-import { LRUCache } from "../../cache";
 import { HttpHandlerOpts } from "../../interfaces/http-handler-opts";
-import { validateJob, validateQueueName } from "../../validators";
-import { config } from "../../config";
-
-const cache = new LRUCache<Queue>(config.queueCacheSize, async (queueName, queue) => {
-  await queue.close();
-});
+import { validateJob, validatePagination, validateQueueName } from "../../validators";
+import { getQueue } from "../../utils/queue-factory";
 
 export const QueueHttpController = {
   /**
@@ -23,11 +18,7 @@ export const QueueHttpController = {
       return new Response((<Error>err).message, { status: 400 });
     }
 
-    let queue = cache.get(queueName);
-    if (!queue) {
-      queue = new Queue(queueName, { connection: opts.redisClient, prefix: config.defaultQueuePrefix });
-      cache.put(queueName, queue);
-    }
+    const queue = await getQueue(queueName, opts.redisClient);
 
     try {
       const body = await opts.req.json();
@@ -60,26 +51,21 @@ export const QueueHttpController = {
   */
   getJobs: async (opts: HttpHandlerOpts) => {
     const queueName = opts.params.queueName;
-    let queue = cache.get(queueName);
-    if (!queue) {
-      queue = new Queue(queueName, { connection: opts.redisClient });
-      cache.put(queueName, queue);
+    let start;
+    let length;
+
+    try {
+      validateQueueName(queueName);
+
+      start = parseInt(opts.searchParams?.get("start") || "0");
+      length = parseInt(opts.searchParams?.get("length") || "10");
+
+      validatePagination(start, length);
+    } catch (err) {
+      return new Response((<Error>err).message, { status: 400 });
     }
 
-    const start = parseInt(opts.searchParams?.get("start") || "0");
-    const length = parseInt(opts.searchParams?.get("length") || "10");
-
-    if (isNaN(start) || isNaN(length)) {
-      return new Response("Invalid start or length", { status: 400 });
-    }
-
-    if (start < 0 || length < 0) {
-      return new Response("Start and length must be positive", { status: 400 });
-    }
-
-    if (length > 100) {
-      return new Response("Length must be less than or equal to 100", { status: 400 });
-    }
+    const queue = await getQueue(queueName, opts.redisClient);
 
     const statuses: JobState[] =
       (opts.searchParams?.get("statuses") || "waiting,active,completed,failed").split(",").filter((s) => s) as JobState[];
@@ -98,5 +84,31 @@ export const QueueHttpController = {
     ]);
 
     return new Response(JSON.stringify({ counts, jobs, start, length }), { status: 200 });
+  },
+
+  /**
+   * getJob
+   * @param opts 
+   * @returns 
+   */
+  getJob: async (opts: HttpHandlerOpts) => {
+    const queueName = opts.params.queueName;
+    try {
+      validateQueueName(queueName);
+    } catch (err) {
+      return new Response((<Error>err).message, { status: 400 });
+    }
+
+    const queue = await getQueue(queueName, opts.redisClient);
+
+    const jobId = opts.params.jobId;
+    const job = await queue.getJob(jobId);
+
+    if (!job) {
+      return new Response("Job not found", { status: 404 });
+    }
+
+    return new Response(JSON.stringify(job), { status: 200 });
   }
+
 }

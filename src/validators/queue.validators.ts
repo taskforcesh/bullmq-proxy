@@ -117,3 +117,17 @@ export const validateJobOpts = (opts: JobsOptions) => {
     validateRepeatOpts(opts.repeat);
   }
 }
+
+export const validatePagination = (start: number, length: number) => {
+  if (isNaN(start) || isNaN(length)) {
+    throw new Error("Invalid start or length");
+  }
+
+  if (start < 0 || length < 0) {
+    throw new Error("Start and length must be positive");
+  }
+
+  if (length > 100) {
+    throw new Error("Length must be less than or equal to 100");
+  }
+}
