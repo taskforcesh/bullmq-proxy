@@ -51,9 +51,11 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v5
         with:
+          context: .
           push: true # push to registry
           pull: true # always fetch the latest base images
-          tags: ghcr.io/taskforcesh/bullmq-proxy:latest
+          
+          tags: ${{ steps.metadata.outputs.tags }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
       - name: Image digest
