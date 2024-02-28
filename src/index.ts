@@ -18,6 +18,7 @@ if (config.redis.uri) {
     host: config.redis.host,
     port: config.redis.port,
     password: config.redis.password,
+    username: config.redis.username,
     tls: config.redis.tls,
     retryStrategy: () => 1000,
     maxRetriesPerRequest: null,
