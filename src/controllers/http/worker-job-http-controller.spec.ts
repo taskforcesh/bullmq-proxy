@@ -1,9 +1,12 @@
 
 import { Redis } from 'ioredis';
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "bun:test";
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { WorkerJobHttpController } from './worker-job-http-controller';
+import { config } from '../../config';
 
 let redisClient: Redis;
+
+const queuePrefix = config.defaultQueuePrefix;
 
 beforeAll(async () => {
   redisClient = new Redis({
@@ -49,20 +52,21 @@ describe('WorkerJobHttpController.updateProgress', () => {
       redisClient
     };
 
-    await redisClient.hset('bull:valid:1', 'progress', 0);
-    await redisClient.set('bull:valid:1:lock', authToken);
+    await redisClient.hset(`${queuePrefix}:valid:1`, 'progress', 0);
+    await redisClient.set(`${queuePrefix}:valid:1:lock`, authToken);
 
     const response = await WorkerJobHttpController.updateProgress(opts);
+    
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('OK');
 
     // Verify that queue.updateJobProgress was called
-    const progress = await redisClient.hget('bull:valid:1', 'progress');
+    const progress = await redisClient.hget(`${queuePrefix}:valid:1`, 'progress');
     expect(progress).toBe('{\"progress\":50}');
 
     // cleanup
-    await redisClient.del('bull:valid:1');
-    await redisClient.del('bull:valid:1:lock');
+    await redisClient.del(`${queuePrefix}:valid:1`);
+    await redisClient.del(`${queuePrefix}:valid:1:lock`);
   });
 });
 
@@ -73,7 +77,7 @@ describe('WorkerJobHttpController.addLog', () => {
     const jobId = "42";
     const logMessage = "Log message";
 
-    const logsKey = `bull:valid:${jobId}:logs`;
+    const logsKey = `${queuePrefix}:valid:${jobId}:logs`;
 
     await redisClient.del(logsKey);
 
@@ -89,8 +93,8 @@ describe('WorkerJobHttpController.addLog', () => {
       redisClient
     };
 
-    await redisClient.hset(`bull:valid:${jobId}`, 'progress', 0);
-    await redisClient.set(`bull:valid:${jobId}:lock`, authToken);
+    await redisClient.hset(`${queuePrefix}:valid:${jobId}`, 'progress', 0);
+    await redisClient.set(`${queuePrefix}:valid:${jobId}:lock`, authToken);
 
     const response = await WorkerJobHttpController.addLog(opts);
     expect(response.status).toBe(200);
