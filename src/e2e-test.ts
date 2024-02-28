@@ -44,14 +44,15 @@ describe("e2e", () => {
   });
 
   it("process a job updating progress and adding logs", async () => {
-    const proxy = await startProxy(8080, redisClient, { skipInitWorkers: true });
+    const proxy = await startProxy(0, redisClient, { skipInitWorkers: true });
+    const proxyPort = proxy.port;
 
     let server: Server;
     const processingJob = new Promise<void>((resolve, reject) => {
       server = Bun.serve({
         // Typescript requires this dummy websocket
         websocket: undefined as any,
-        port: 8081,
+        port: 0,
         async fetch(req: Request) {
           try {
             const { job, token } = await req.json();
@@ -60,7 +61,7 @@ describe("e2e", () => {
             expect(job).toHaveProperty('opts');
             expect(token).toBe(token);
 
-            const updateProgress = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${job.id}/progress`, {
+            const updateProgress = await fetch(`http://localhost:${proxyPort}/queues/${queueName}/jobs/${job.id}/progress`, {
               method: 'POST',
               body: JSON.stringify(100),
               headers: {
@@ -71,7 +72,7 @@ describe("e2e", () => {
 
             expect(updateProgress.status).toBe(200);
 
-            const addLogs = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${job.id}/logs`, {
+            const addLogs = await fetch(`http://localhost:${proxyPort}/queues/${queueName}/jobs/${job.id}/logs`, {
               method: 'POST',
               body: JSON.stringify("log message"),
               headers: {
@@ -94,7 +95,7 @@ describe("e2e", () => {
     });
 
     // Add a job to a queue
-    const addJobResponse = await fetch(`http://localhost:8080/queues/${queueName}/jobs`, {
+    const addJobResponse = await fetch(`http://localhost:${proxyPort}/queues/${queueName}/jobs`, {
       method: 'POST',
       body: JSON.stringify([{ name: "test-job", data: 'test' }]),
       headers: {
@@ -111,12 +112,12 @@ describe("e2e", () => {
     expect(jobsAdded[0]).toHaveProperty('opts');
 
     // Register a worker
-    const workerResponse = await fetch('http://localhost:8080/workers', {
+    const workerResponse = await fetch(`http://localhost:${proxyPort}/workers`, {
       method: 'POST',
       body: JSON.stringify({
         queue: queueName,
         endpoint: {
-          url: 'http://localhost:8081',
+          url: `http://localhost:${server!.port}`,
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -135,7 +136,7 @@ describe("e2e", () => {
     // Wait so that the job has a chance to return its value
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const getJobResponse = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${jobsAdded[0].id}`, {
+    const getJobResponse = await fetch(`http://localhost:${proxyPort}/queues/${queueName}/jobs/${jobsAdded[0].id}`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -151,7 +152,7 @@ describe("e2e", () => {
     expect(job.returnvalue).toBe("foo bar");
     expect(job.progress).toBe(100);
 
-    const getJobLogsResponse = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${jobsAdded[0].id}/logs`, {
+    const getJobLogsResponse = await fetch(`http://localhost:${proxyPort}/queues/${queueName}/jobs/${jobsAdded[0].id}/logs`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
