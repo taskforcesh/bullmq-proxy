@@ -1,4 +1,4 @@
-import IORedis from "ioredis";
+import { Redis, Cluster } from "ioredis";
 
 import {
   QueueController,
@@ -11,6 +11,7 @@ import { Server } from "bun";
 import queuesRoutes from "./routes/queues-routes";
 import asciiArt from "./ascii-art";
 import workersRoutes from "./routes/workers-routes";
+import jobsRoutes from "./routes/jobs-routes";
 
 const pkg = require("../package.json");
 
@@ -19,6 +20,7 @@ const routeMatcher = new RouteMatcher();
 // Standard HTTP Routes
 queuesRoutes(routeMatcher);
 workersRoutes(routeMatcher);
+jobsRoutes(routeMatcher);
 
 // WebSocket Routes
 routeMatcher.addWebSocketRoute<{ queueName: string }>("queue", "/ws/queues/:queueName", QueueController);
@@ -31,7 +33,7 @@ routeMatcher.addWebSocketRoute<{ queueName: string }>(
   "/ws/queues/:queueName/events", QueueEventsController
 );
 
-export const fetchHandler = (connection: IORedis, authTokens: string[] = []) => async (req: Request, server: Server) => {
+export const fetchHandler = (connection: Redis | Cluster, authTokens: string[] = []) => async (req: Request, server: Server) => {
   const url = new URL(req.url);
   const { searchParams } = url;
   const { method } = req;
@@ -44,24 +46,6 @@ export const fetchHandler = (connection: IORedis, authTokens: string[] = []) => 
     );
   }
 
-  const from =
-    req.headers.get("x-forwarded-for") || req.headers.get("host");
-
-  const token = searchParams.get("token") || req.headers.get("authorization")?.split("Bearer ")[1];
-  if (!token) {
-    warn(
-      `Unauthorized request (missing token) to path ${url.pathname.toString()} from ${from}`
-    );
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  if (!authTokens.includes(token!)) {
-    warn(
-      `Unauthorized request (invalid token) to path ${url.pathname.toString()} from ${from}`
-    );
-    return new Response("Unauthorized", { status: 401 });
-  }
-
   // Choose controller based on path
   const route = routeMatcher.match(url.pathname, method);
   if (!route) {
@@ -70,6 +54,10 @@ export const fetchHandler = (connection: IORedis, authTokens: string[] = []) => 
       }`
     );
     return new Response("Not found", { status: 404 });
+  }
+
+  if (route.auth && !await route.auth(req, url, route.params, connection)) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const queueName = route.params?.queueName;

@@ -1,5 +1,5 @@
 
-import { Worker } from "bullmq";
+import { Job, Worker } from "bullmq";
 import { Redis, Cluster } from "ioredis";
 import { debug } from "../../utils/log";
 
@@ -25,7 +25,7 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
 
   debugEnabled && debug(`Starting worker for queue ${queueName} with endpoint ${workerMetadata.endpoint.url} and options ${workerMetadata.opts || 'default'}`);
 
-  const worker = new Worker(queueName, async (job) => {
+  const worker = new Worker(queueName, async (job: Job, token?: string) => {
     debugEnabled && debug(`Processing job ${job.id} from queue ${queueName} with endpoint ${workerEndpoint.url}`);
 
     // Process job by calling an external service using the worker endpoint
@@ -39,7 +39,7 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
       const response = await fetch(workerEndpoint.url, {
         method: workerEndpoint.method,
         headers: workerEndpoint.headers,
-        body: JSON.stringify(job.toJSON()),
+        body: JSON.stringify({ job: job.toJSON(), token }),
         signal: controller.signal
       });
 

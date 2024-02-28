@@ -50,18 +50,26 @@ const websocket = {
   perMessageDeflate: false,
 };
 
+export interface ProxyOpts {
+  skipInitWorkers?: boolean;
+}
+
 export const startProxy = async (
   port: number,
   connection: IORedis,
-  authTokens: string[] = [],
+  opts: ProxyOpts = {},
 ) => {
   console.log(chalk.gray(asciiArt))
 
-  await WorkerHttpController.init(connection);
+  if (opts.skipInitWorkers !== true) {
+    await WorkerHttpController.init(connection);
+  }
 
-  Bun.serve<WebSocketData>({
+  const server = Bun.serve<WebSocketData>({
     port,
-    fetch: fetchHandler(connection, authTokens),
+    fetch: fetchHandler(connection),
     websocket,
   });
+
+  return server;
 };

@@ -28,7 +28,7 @@ connection.on("error", (err) => {
   console.error("Redis connection error", err);
 })
 
-startProxy(config.port, connection, config.authTokens).then(() => {
+startProxy(config.port, connection).then(() => {
   info(`Running BullMQ Proxy on port ${config.port} (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version}`);
 }).catch((err) => {
   error(`Error starting server ${(<Error>err).message}`);
