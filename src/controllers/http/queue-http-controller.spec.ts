@@ -1,9 +1,10 @@
 
-import { describe, it, expect, jest, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, jest, beforeEach, afterEach } from 'bun:test';
 import { QueueHttpController } from './queue-http-controller';
 import { JobJson, Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { cleanCache } from '../../utils/queue-factory';
+import { config } from '../../config';
 
 describe('QueueHttpController.addJobs', () => {
   let fakeReq: Request;
@@ -27,7 +28,7 @@ describe('QueueHttpController.addJobs', () => {
 
   afterEach(async () => {
     // Clean up
-    const queue = new Queue('testQueue', { connection: redisClient });
+    const queue = new Queue('testQueue', { connection: redisClient, prefix: config.defaultQueuePrefix });
     await queue.obliterate({ force: true });
 
     // We need to clean the cache to eliminate side-effects between tests
