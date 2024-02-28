@@ -14,7 +14,8 @@
     "build:declaration": "tsc --emitDeclarationOnly",
     "tsc": "tsc --noEmit",
     "prepare": "husky",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "test:e2e": "bun test ./src/e2e-test.ts"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.31.17",
