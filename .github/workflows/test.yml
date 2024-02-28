@@ -34,6 +34,7 @@ jobs:
       - run: bun install
       - run: bun run tsc
       - run: bun test
+      - run: bun run test:e2e
 
   test-dragonflydb:
     runs-on: ubuntu-latest
@@ -56,3 +57,4 @@ jobs:
       - run: bun install
       - run: bun run tsc
       - run: QUEUE_PREFIX={b} bun test
+      - run: QUEUE_PREFIX={b} bun run test:e2e
