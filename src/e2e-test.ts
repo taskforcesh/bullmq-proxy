@@ -60,7 +60,7 @@ describe("e2e", () => {
             expect(job).toHaveProperty('opts');
             expect(token).toBe(token);
 
-            const updateProgress = await fetch(`http://127.0.0.1:8080/queues/${queueName}/jobs/${job.id}/progress`, {
+            const updateProgress = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${job.id}/progress`, {
               method: 'POST',
               body: JSON.stringify(100),
               headers: {
@@ -71,7 +71,7 @@ describe("e2e", () => {
 
             expect(updateProgress.status).toBe(200);
 
-            const addLogs = await fetch(`http://127.0.0.1:8080/queues/${queueName}/jobs/${job.id}/logs`, {
+            const addLogs = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${job.id}/logs`, {
               method: 'POST',
               body: JSON.stringify("log message"),
               headers: {
@@ -94,7 +94,7 @@ describe("e2e", () => {
     });
 
     // Add a job to a queue
-    const addJobResponse = await fetch(`http://127.0.0.1:8080/queues/${queueName}/jobs`, {
+    const addJobResponse = await fetch(`http://localhost:8080/queues/${queueName}/jobs`, {
       method: 'POST',
       body: JSON.stringify([{ name: "test-job", data: 'test' }]),
       headers: {
@@ -111,7 +111,7 @@ describe("e2e", () => {
     expect(jobsAdded[0]).toHaveProperty('opts');
 
     // Register a worker
-    const workerResponse = await fetch('http://127.0.0.1:8080/workers', {
+    const workerResponse = await fetch('http://localhost:8080/workers', {
       method: 'POST',
       body: JSON.stringify({
         queue: queueName,
@@ -135,7 +135,7 @@ describe("e2e", () => {
     // Wait so that the job has a chance to return its value
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const getJobResponse = await fetch(`http://127.0.0.1:8080/queues/${queueName}/jobs/${jobsAdded[0].id}`, {
+    const getJobResponse = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${jobsAdded[0].id}`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -144,8 +144,6 @@ describe("e2e", () => {
     expect(getJobResponse.status).toBe(200);
     const job = await getJobResponse.json() as JobJson;
 
-    console.log(job)
-
     expect(job).toHaveProperty('id', jobsAdded[0].id);
     expect(job).toHaveProperty('name', 'test-job');
     expect(job).toHaveProperty('data', 'test');
@@ -153,7 +151,7 @@ describe("e2e", () => {
     expect(job.returnvalue).toBe("foo bar");
     expect(job.progress).toBe(100);
 
-    const getJobLogsResponse = await fetch(`http://127.0.0.1:8080/queues/${queueName}/jobs/${jobsAdded[0].id}/logs`, {
+    const getJobLogsResponse = await fetch(`http://localhost:8080/queues/${queueName}/jobs/${jobsAdded[0].id}/logs`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
