@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.6...v1.1.7) (2024-02-29)
+
+
+### Bug Fixes
+
+* **docker-build:** remove unneeded checkout action ([5127486](https://github.com/taskforcesh/bullmq-proxy/commit/5127486b509f663495cfb11c22d736234ad0a2de))
+
 ## [1.1.6](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.5...v1.1.6) (2024-02-29)
 
 
