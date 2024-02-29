@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.0.0...v1.1.0) (2024-02-29)
+
+
+### Bug Fixes
+
+* correct end offset of pages on get jobs and get logs ([8c12825](https://github.com/taskforcesh/bullmq-proxy/commit/8c1282596f8f96de7807d65171e98c9228b5637e))
+
+
+### Features
+
+* **workers:** add support for updating job progress and add job logs ([f4b342e](https://github.com/taskforcesh/bullmq-proxy/commit/f4b342e90842177270479a60625b0f6bc963147f))
+
 # 1.0.0 (2024-02-26)
 
 
