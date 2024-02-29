@@ -1,3 +1,10 @@
+## [1.1.9](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.8...v1.1.9) (2024-02-29)
+
+
+### Bug Fixes
+
+* **config:** use the more standard REDIS_URL env instead of REDIS_URI ([bb40b57](https://github.com/taskforcesh/bullmq-proxy/commit/bb40b577d73e725244c8a081aa3f0241d148dece))
+
 ## [1.1.8](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.7...v1.1.8) (2024-02-29)
 
 
