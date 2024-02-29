@@ -12,7 +12,7 @@ jobs:
     name: Build and publish
     runs-on: ubuntu-latest
     env:
-      IMG_NAME: bullmq-proxy
+      IMG_NAME: ghcr.io/taskforcesh/bullmq-proxy
     steps:
       - name: Checkout
         uses: actions/checkout@v4
