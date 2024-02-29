@@ -44,7 +44,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v4
         with:
           push: true # push to registry
           pull: true # always fetch the latest base images
