@@ -10,11 +10,11 @@
     "url": "https://github.com/taskforcesh/bullmq-proxy.git"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "bun run --watch src/index.ts",
     "start": "bun src/index.ts",
     "build:declaration": "tsc --emitDeclarationOnly",
     "tsc": "tsc --noEmit",
-    "prepare": "husky",
     "commitlint": "commitlint --edit",
     "test:e2e": "bun test ./src/e2e-test.ts"
   },
