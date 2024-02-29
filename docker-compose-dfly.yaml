@@ -1,0 +1,21 @@
+version: '3'
+services:
+  proxy:
+    image: ghcr.io/taskforcesh/bullmq-proxy:latest
+    ports:
+      - 8080:8080
+    environment:
+      PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_TLS: ${REDIS_TLS}
+      AUTH_TOKENS: ${AUTH_TOKENS}
+      QUEUE_PREFIX: '{b}'
+  dragonflydb:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    environment:
+      DFLY_cluster_mode: emulated
+      DFLY_lock_on_hashtags: true
+    ports:
+      - 6379:6379
