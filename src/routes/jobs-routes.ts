@@ -20,7 +20,7 @@ export default (routeMatcher: RouteMatcher) => {
     authForWorkers);
 
   routeMatcher.addHttpRoute<{ counts: number, jobs: JobJson[] }>(
-    "addLog",
+    "getLogs",
     "/queues/:queueName/jobs/:jobId/logs",
     WorkerJobHttpController.getLogs,
     "get",
