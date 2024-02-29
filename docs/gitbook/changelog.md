@@ -1,3 +1,10 @@
+## [1.1.8](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.7...v1.1.8) (2024-02-29)
+
+
+### Bug Fixes
+
+* **docker-build:** downgrade docker/build-push-action to v4 ([8d5edec](https://github.com/taskforcesh/bullmq-proxy/commit/8d5edecfb3614ba4ece1537c028eded621cb9b4d))
+
 ## [1.1.7](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.6...v1.1.7) (2024-02-29)
 
 
