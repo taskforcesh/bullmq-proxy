@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.2...v1.1.3) (2024-02-29)
+
+
+### Bug Fixes
+
+* **docker-build:** use GHA built in docker layers cache ([0dd9c31](https://github.com/taskforcesh/bullmq-proxy/commit/0dd9c3134f7aa2a2771dba4446259831cc124f24))
+
 ## [1.1.2](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.1...v1.1.2) (2024-02-29)
 
 
