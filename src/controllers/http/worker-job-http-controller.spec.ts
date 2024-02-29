@@ -56,7 +56,7 @@ describe('WorkerJobHttpController.updateProgress', () => {
     await redisClient.set(`${queuePrefix}:valid:1:lock`, authToken);
 
     const response = await WorkerJobHttpController.updateProgress(opts);
-    
+
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('OK');
 
@@ -103,5 +103,45 @@ describe('WorkerJobHttpController.addLog', () => {
     const logs = await redisClient.lrange(logsKey, 0, -1);
     expect(logs).toBeArrayOfSize(1);
     expect(logs[0]).toBe(logMessage);
+  });
+});
+
+
+describe('WorkerJobHttpController.getLogs', () => {
+  it('returns a 400 response if the start or length query params are invalid', async () => {
+    const opts = {
+      params: {
+        queueName: 'valid'
+      },
+      searchParams: new URLSearchParams('start=invalid&length=invalid'),
+      req: {} as Request,
+      redisClient
+    };
+
+    const response = await WorkerJobHttpController.getLogs(opts);
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe('Invalid start or length');
+  });
+
+  it.only('returns a 200 response with the logs', async () => {
+    const jobId = "42";
+    const logsKey = `${queuePrefix}:valid:${jobId}:logs`;
+
+    await redisClient.del(logsKey);
+    await redisClient.rpush(logsKey, "log1", "log2", "log3");
+
+    const opts = {
+      params: {
+        queueName: 'valid',
+        jobId
+      },
+      searchParams: new URLSearchParams('start=0&length=2'),
+      req: {} as Request,
+      redisClient
+    };
+
+    const response = await WorkerJobHttpController.getLogs(opts);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ count: 3, logs: ["log1", "log2"] });
   });
 });
