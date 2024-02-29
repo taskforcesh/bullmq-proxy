@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.1...v1.1.2) (2024-02-29)
+
+
+### Bug Fixes
+
+* create image using production files ([c939ed6](https://github.com/taskforcesh/bullmq-proxy/commit/c939ed6461ac8f54074809cb182414c3fb12e11c))
+
 ## [1.1.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.0...v1.1.1) (2024-02-29)
 
 
