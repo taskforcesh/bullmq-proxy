@@ -14,9 +14,6 @@ jobs:
     env:
       IMG_NAME: ghcr.io/taskforcesh/bullmq-proxy
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Debug
         run: |
           echo "github.ref -> {{ github.ref }}"
@@ -49,11 +46,13 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v5
         with:
-          context: .
           push: true # push to registry
           pull: true # always fetch the latest base images
 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
