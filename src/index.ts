@@ -1,3 +1,4 @@
+import { Server } from "bun";
 import IORedis, { Cluster, Redis } from "ioredis";
 
 import { startProxy } from "./proxy";
@@ -29,8 +30,8 @@ connection.on("error", (err) => {
   console.error("Redis connection error", err);
 })
 
-startProxy(config.port, connection).then(() => {
-  info(`Running BullMQ Proxy on port ${config.port} (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version}`);
+startProxy(config.port, connection).then((server: Server) => {
+  info(`Running BullMQ Proxy on port ${server.port} (c) ${new Date().getFullYear()} Taskforce.sh Inc. v${pkg.version}`);
 }).catch((err) => {
   error(`Error starting server ${(<Error>err).message}`);
 });
