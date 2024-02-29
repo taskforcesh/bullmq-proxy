@@ -80,7 +80,7 @@ export const QueueHttpController = {
 
     const [counts, jobs] = await Promise.all([
       queue.getJobCounts(...statuses),
-      queue.getJobs(statuses, start, start + length)
+      queue.getJobs(statuses, start, start + length - 1)
     ]);
 
     return new Response(JSON.stringify({ counts, jobs, start, length }), { status: 200 });

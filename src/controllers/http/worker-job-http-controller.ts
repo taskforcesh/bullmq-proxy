@@ -68,7 +68,7 @@ export const WorkerJobHttpController = {
     const jobId = opts.params.jobId;
     try {
       const queue = await getQueue(queueName, opts.redisClient);
-      const logs = await queue.getJobLogs(jobId);
+      const logs = await queue.getJobLogs(jobId, start, start + length - 1);
       return new Response(JSON.stringify(logs), { status: 200 });
     } catch (err) {
       return new Response((<Error>err).message, { status: 500 });
