@@ -1,3 +1,10 @@
+## [1.1.6](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.5...v1.1.6) (2024-02-29)
+
+
+### Bug Fixes
+
+* **docker-build:** disable build cache ([2afa0ad](https://github.com/taskforcesh/bullmq-proxy/commit/2afa0ad3505b73d8a868bc7516859e53ce166790))
+
 ## [1.1.5](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.4...v1.1.5) (2024-02-29)
 
 
