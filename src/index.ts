@@ -9,8 +9,8 @@ const pkg = require("../package.json");
 
 let connection: Redis | Cluster;
 
-if (config.redis.uri) {
-  connection = new IORedis(config.redis.uri, {
+if (config.redis.url) {
+  connection = new IORedis(config.redis.url, {
     retryStrategy: () => 1000,
     maxRetriesPerRequest: null,
   });
