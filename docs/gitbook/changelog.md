@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.3...v1.1.4) (2024-02-29)
+
+
+### Bug Fixes
+
+* **docker-build:** fix docker image tags ([ff3bdd5](https://github.com/taskforcesh/bullmq-proxy/commit/ff3bdd537ba595848d44f91e23abc346b5fea1c2))
+
 ## [1.1.3](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.2...v1.1.3) (2024-02-29)
 
 
