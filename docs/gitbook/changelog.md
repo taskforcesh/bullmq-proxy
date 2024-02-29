@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.4...v1.1.5) (2024-02-29)
+
+
+### Bug Fixes
+
+* **docker-build:** ignore scripts when installing bun dependencies ([41e598e](https://github.com/taskforcesh/bullmq-proxy/commit/41e598e2eaab3bcfa8c80ff9b0c38d96e499db33))
+
 ## [1.1.4](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.3...v1.1.4) (2024-02-29)
 
 
