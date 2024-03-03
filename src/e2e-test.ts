@@ -44,7 +44,7 @@ describe("e2e", () => {
   });
 
   it("process a job updating progress and adding logs", async () => {
-    const proxy = await startProxy(0, redisClient, { skipInitWorkers: true });
+    const proxy = await startProxy(0, redisClient, redisClient, { skipInitWorkers: true });
     const proxyPort = proxy.port;
 
     let server: Server;

@@ -1,7 +1,7 @@
 
 import { Job, Worker } from "bullmq";
 import { Redis, Cluster } from "ioredis";
-import { debug } from "../../utils/log";
+import { debug, info } from "../../utils/log";
 
 import { HttpHandlerOpts, WorkerMetadata } from "../../interfaces";
 import { validateWorkerMetadata } from "../../validators";
@@ -13,12 +13,13 @@ const workers: { [queueName: string]: Worker } = {};
 
 const workerMetadataKey = config.workerMetadataKey;
 
-// Gracefully close all workers
-process.on('exit', async () => {
-  for (const queueName in workers) {
-    await workers[queueName].close();
-  }
-});
+export const gracefulShutdownWorkers = async () => {
+  info(`Closing workers...`);
+
+  const closingWorkers = Object.keys(workers).map(async (queueName) => workers[queueName].close());
+  await Promise.all(closingWorkers);
+  info('Workers closed');
+}
 
 const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, connection: Redis | Cluster): Worker => {
   const { endpoint: workerEndpoint, opts: workerOptions } = workerMetadata;
@@ -72,7 +73,7 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
 };
 
 export const WorkerHttpController = {
-  init: (redisClient: Redis | Cluster) => {
+  init: (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
     // Load workers from Redis and start them
     debugEnabled && debug('Loading workers from Redis...');
     const stream = redisClient.hscanStream(workerMetadataKey, { count: 10 });
@@ -82,7 +83,7 @@ export const WorkerHttpController = {
         const value = result[i + 1];
 
         const workerMetadata = JSON.parse(value) as WorkerMetadata;
-        workers[queueName] = workerFromMetadata(queueName, workerMetadata, redisClient);
+        workers[queueName] = workerFromMetadata(queueName, workerMetadata, workersRedisClient);
       }
     });
 
@@ -122,11 +123,11 @@ export const WorkerHttpController = {
     }
 
     const { queue: queueName } = workerMetadata;
-    const { redisClient } = opts;
+    const { redisClient, workersRedisClient } = opts;
 
     // Replace worker if it already exists
     const existingWorker = workers[queueName];
-    const worker = workerFromMetadata(queueName, workerMetadata, redisClient);
+    const worker = workerFromMetadata(queueName, workerMetadata, workersRedisClient);
     workers[queueName] = worker;
 
     // Upsert worker metadata in Redis for the worker to be able to reconnect after a restart

@@ -4,13 +4,15 @@ import { HttpHandlerOpts } from "../../interfaces/http-handler-opts";
 import { validateJob, validatePagination, validateQueueName } from "../../validators";
 import { getQueue } from "../../utils/queue-factory";
 
+type QueueHttpControllerOpts = Omit<HttpHandlerOpts, "workersRedisClient">;
+
 export const QueueHttpController = {
   /**
    * addJobs
    * @param opts 
    * @returns 
    */
-  addJobs: async (opts: HttpHandlerOpts) => {
+  addJobs: async (opts: QueueHttpControllerOpts) => {
     const queueName = opts.params.queueName;
     try {
       validateQueueName(queueName);
@@ -49,7 +51,7 @@ export const QueueHttpController = {
     Uses "start" and "length" as query parameters.
     and optional "statuses" query parameter to filter by status.
   */
-  getJobs: async (opts: HttpHandlerOpts) => {
+  getJobs: async (opts: QueueHttpControllerOpts) => {
     const queueName = opts.params.queueName;
     let start;
     let length;
@@ -91,7 +93,7 @@ export const QueueHttpController = {
    * @param opts 
    * @returns 
    */
-  getJob: async (opts: HttpHandlerOpts) => {
+  getJob: async (opts: QueueHttpControllerOpts) => {
     const queueName = opts.params.queueName;
     try {
       validateQueueName(queueName);
@@ -110,5 +112,4 @@ export const QueueHttpController = {
 
     return new Response(JSON.stringify(job), { status: 200 });
   }
-
 }

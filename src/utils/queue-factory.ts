@@ -1,8 +1,8 @@
 import { Cluster, Redis } from "ioredis";
+import { Queue } from "bullmq";
 
 import { LRUCache } from "../cache";
 import { config } from "../config";
-import { Queue } from "bullmq";
 
 const cache = new LRUCache<Queue>(config.queueCacheSize, async (queueName, queue) => {
   await queue.close();
