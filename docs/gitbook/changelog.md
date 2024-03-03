@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.9...v1.2.0) (2024-03-03)
+
+
+### Features
+
+* gracefullier close & add  dedicated workers connection ([1e0c023](https://github.com/taskforcesh/bullmq-proxy/commit/1e0c0238d03d4e5f8cfd84da70f0b725e16f49b8))
+
 ## [1.1.9](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.8...v1.1.9) (2024-02-29)
 
 
