@@ -1,4 +1,4 @@
-import IORedis from "ioredis";
+import { Cluster, Redis } from "ioredis";
 import chalk from "chalk";
 
 import { WebSocketBehaviour } from "./interfaces/websocket-behaviour";
@@ -56,18 +56,19 @@ export interface ProxyOpts {
 
 export const startProxy = async (
   port: number,
-  connection: IORedis,
+  connection: Redis | Cluster,
+  workersConnection: Redis | Cluster,
   opts: ProxyOpts = {},
 ) => {
   console.log(chalk.gray(asciiArt))
 
   if (opts.skipInitWorkers !== true) {
-    await WorkerHttpController.init(connection);
+    await WorkerHttpController.init(connection, workersConnection);
   }
 
   const server = Bun.serve<WebSocketData>({
     port,
-    fetch: fetchHandler(connection),
+    fetch: fetchHandler(connection, workersConnection),
     websocket,
   });
 

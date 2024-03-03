@@ -48,7 +48,7 @@ describe('Proxy', () => {
   });
 
   it('should start the proxy with the correct configuration', async () => {
-    const redisClientMock = {
+    const redisClientMock =<unknown> {
       hscanStream: jest.fn(() => {
         // on('end') Must be called after on('data')
         return {
@@ -61,9 +61,9 @@ describe('Proxy', () => {
           }),
         };
       })
-    }
+    } as Redis;
 
-    await startProxy(3000, <unknown>redisClientMock as Redis, { skipInitWorkers: true });
+    await startProxy(3000, redisClientMock, redisClientMock, { skipInitWorkers: true });
     expect(Bun.serve).toHaveBeenCalledTimes(1);
 
     expect(Bun.serve).toHaveBeenCalledWith(
@@ -74,5 +74,4 @@ describe('Proxy', () => {
       })
     );
   });
-
 });

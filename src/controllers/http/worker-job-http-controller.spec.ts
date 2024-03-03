@@ -5,11 +5,13 @@ import { WorkerJobHttpController } from './worker-job-http-controller';
 import { config } from '../../config';
 
 let redisClient: Redis;
+let workersRedisClient: Redis;
 
 const queuePrefix = config.defaultQueuePrefix;
 
 beforeAll(async () => {
-  redisClient = new Redis({
+  redisClient = new Redis();
+  workersRedisClient = new Redis({
     maxRetriesPerRequest: null
   });
 });
@@ -29,14 +31,16 @@ describe('WorkerJobHttpController.updateProgress', () => {
       req: {
         json: () => Promise.resolve({ progress: 50 })
       } as Request,
-      redisClient: new Redis({
-        maxRetriesPerRequest: null
-      })
+      redisClient,
+      workersRedisClient
     };
 
     const response = await WorkerJobHttpController.updateProgress(opts);
     expect(response.status).toBe(500);
     expect(await response.text()).toBe('Missing key for job 1. updateProgress');
+
+    await opts.redisClient.quit();
+    await opts.workersRedisClient.quit();
   });
 
   it('updates job progress and returns a 200 response', async () => {
@@ -49,7 +53,8 @@ describe('WorkerJobHttpController.updateProgress', () => {
       req: {
         json: () => Promise.resolve({ progress: 50 })
       } as Request,
-      redisClient
+      redisClient,
+      workersRedisClient
     };
 
     await redisClient.hset(`${queuePrefix}:valid:1`, 'progress', 0);
@@ -90,7 +95,8 @@ describe('WorkerJobHttpController.addLog', () => {
       req: {
         json: () => Promise.resolve(logMessage)
       } as Request,
-      redisClient
+      redisClient,
+      workersRedisClient
     };
 
     await redisClient.hset(`${queuePrefix}:valid:${jobId}`, 'progress', 0);
@@ -115,7 +121,8 @@ describe('WorkerJobHttpController.getLogs', () => {
       },
       searchParams: new URLSearchParams('start=invalid&length=invalid'),
       req: {} as Request,
-      redisClient
+      redisClient,
+      workersRedisClient
     };
 
     const response = await WorkerJobHttpController.getLogs(opts);
@@ -137,7 +144,8 @@ describe('WorkerJobHttpController.getLogs', () => {
       },
       searchParams: new URLSearchParams('start=0&length=2'),
       req: {} as Request,
-      redisClient
+      redisClient,
+      workersRedisClient
     };
 
     const response = await WorkerJobHttpController.getLogs(opts);

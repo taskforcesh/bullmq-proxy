@@ -16,7 +16,8 @@ const fakeAddValidReq = {
 describe('WorkerHttpController.init', () => {
 
   it('should initialize workers from Redis metadata', async () => {
-    await expect(WorkerHttpController.init(new Redis({
+
+    await expect(WorkerHttpController.init(new Redis(), new Redis({
       maxRetriesPerRequest: null,
     }))).resolves.toBeUndefined;
   });
@@ -43,7 +44,12 @@ describe('WorkerHttpController.addWorker', () => {
 
   it('should add a worker with valid metadata', async () => {
 
-    const response = await WorkerHttpController.addWorker({ req: fakeAddValidReq, redisClient, params: {} });
+    const response = await WorkerHttpController.addWorker({
+      req: fakeAddValidReq,
+      redisClient,
+      workersRedisClient: redisClient,
+      params: {}
+    });
     expect(response).toBeDefined();
     expect(await response.text()).toBe("OK");
     expect(response!.status).toBe(200); // Assuming 200 is the success status code
@@ -54,7 +60,12 @@ describe('WorkerHttpController.addWorker', () => {
       json: () => Promise.resolve({}) // Invalid metadata
     } as Request;
 
-    const response = await WorkerHttpController.addWorker({ req: fakeReq, redisClient, params: {} });
+    const response = await WorkerHttpController.addWorker({
+      req: fakeReq,
+      redisClient,
+      workersRedisClient: redisClient,
+      params: {}
+    });
     expect(response).toBeDefined();
     expect(response!.status).toBe(400);
   });
@@ -72,10 +83,16 @@ describe('WorkerHttpController.removeWorker', () => {
     const opts = {
       req: {} as Request,
       params: { queueName: 'validQueue' },
-      redisClient
+      redisClient,
+      workersRedisClient: redisClient,
     };
 
-    const responseAdd = await WorkerHttpController.addWorker({ req: fakeAddValidReq, redisClient, params: {} });
+    const responseAdd = await WorkerHttpController.addWorker({
+      req: fakeAddValidReq,
+      redisClient,
+      workersRedisClient: redisClient,
+      params: {},
+    });
     expect(responseAdd).toBeDefined();
 
     const responseRemove = await WorkerHttpController.removeWorker(opts);
@@ -87,7 +104,8 @@ describe('WorkerHttpController.removeWorker', () => {
     const opts = {
       req: {} as Request,
       params: { queueName: 'non-existing-queue' },
-      redisClient
+      redisClient,
+      workersRedisClient: redisClient,
     };
 
     const responseRemove = await WorkerHttpController.removeWorker(opts);
