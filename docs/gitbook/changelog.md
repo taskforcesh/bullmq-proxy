@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.2.0...v1.3.0) (2024-03-20)
+
+
+### Features
+
+* support proxy concurrency ([#18](https://github.com/taskforcesh/bullmq-proxy/issues/18)) ([d7ad35a](https://github.com/taskforcesh/bullmq-proxy/commit/d7ad35a90718fdf4e8c5eae0ec26e2961ad44579))
+
 # [1.2.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.1.9...v1.2.0) (2024-03-03)
 
 
