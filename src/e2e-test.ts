@@ -1,10 +1,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock } from "bun:test";
 import { Server } from "bun";
-import { startProxy } from "./proxy";
+import { cleanProxy, startProxy } from "./proxy";
 import { Redis } from "ioredis";
 import { config } from "./config";
 import { JobJson, Queue } from "bullmq";
 import { cleanCache } from "./utils/queue-factory";
+import { WorkerHttpController } from "./controllers/http/worker-http-controller";
 
 const token = 'test-token';
 
@@ -40,11 +41,14 @@ describe("e2e", () => {
     await cleanCache();
 
     await queue.close();
+
+    await cleanProxy(redisClient);
+
     await redisClient.quit();
   });
 
   it("process a job updating progress and adding logs", async () => {
-    const proxy = await startProxy(0, redisClient, redisClient, { skipInitWorkers: true });
+    const proxy = await startProxy(0, redisClient, redisClient.duplicate());
     const proxyPort = proxy.port;
 
     let server: Server;
@@ -103,8 +107,10 @@ describe("e2e", () => {
         "Authorization": `Bearer ${token}`
       },
     });
+
     expect(addJobResponse.status).toBe(200);
     const jobsAdded = await addJobResponse.json();
+
     expect(jobsAdded).toHaveLength(1);
     expect(jobsAdded[0]).toHaveProperty('id');
     expect(jobsAdded[0]).toHaveProperty('name', 'test-job');
@@ -129,7 +135,8 @@ describe("e2e", () => {
         "Authorization": `Bearer ${token}`
       },
     });
-
+    
+    expect(await workerResponse.text()).toBe("OK");
     expect(workerResponse.status).toBe(200);
     await processingJob;
 

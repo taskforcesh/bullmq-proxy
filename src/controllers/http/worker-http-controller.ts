@@ -89,7 +89,7 @@ export const workerStreamListener = async (redisClient: Redis | Cluster, abortSi
   });
 
   while (running) {
-    const streams = await redisClient.xread('BLOCK', workerStreamBlockingTime, 'STREAMS', workerMetadataStream, lastEventId || '0');
+    const streams = await streamBlockingClient.xread('BLOCK', workerStreamBlockingTime, 'STREAMS', workerMetadataStream, lastEventId || '0');
 
     // If we got no events, continue to the next iteration
     if (!streams || streams.length === 0) {
@@ -110,7 +110,6 @@ export const workerStreamListener = async (redisClient: Redis | Cluster, abortSi
       const existingSha = metadatasShas[queueName];
 
       const workerMetadataRaw = await redisClient.hget(workerMetadataKey, queueName);
-
 
       // If workerMetadatadaVersion is older than the event id, we need to update the worker
       if (workerMetadataRaw) {
@@ -205,12 +204,11 @@ export const WorkerHttpController = {
         reject(err);
       });
     });
-
-    workerStreamListener(workersRedisClient, abortController.signal);
   },
   init: async (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
     await WorkerHttpController.loadScripts(redisClient);
     await WorkerHttpController.loadWorkers(redisClient, workersRedisClient);
+    workerStreamListener(workersRedisClient, abortController.signal);
   },
 
   /**
@@ -307,5 +305,17 @@ export const WorkerHttpController = {
       debugEnabled && debug(`Failed to remove worker: ${err}`);
       return new Response(`Failed to remove worker ${err.toString()}`, { status: 500 });
     }
+  },
+
+  /**
+   * Cleans the proxy metadata from the Redis host.
+   * @param redisClient 
+   * @returns 
+   */
+  cleanMetadata: async (redisClient: Redis | Cluster) => {
+    const multi = redisClient.multi();
+    multi.del(workerMetadataKey);
+    multi.del(workerMetadataStream);
+    return multi.exec();
   }
 }
