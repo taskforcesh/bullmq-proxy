@@ -15,5 +15,8 @@ export const config = {
   debugEnabled: process.env.DEBUG === "true",
   minQueueNameLength: process.env.MIN_QUEUE_NAME_LENGTH ? parseInt(process.env.MIN_QUEUE_NAME_LENGTH) : 3,
   maxQueueNameLength: process.env.MAX_QUEUE_NAME_LENGTH ? parseInt(process.env.MAX_QUEUE_NAME_LENGTH) : 100,
-  workerMetadataKey: process.env.WORKER_METADATA_KEY || "bullmq-proxy:workers",
+  workerMetadataKey: process.env.WORKER_METADATA_KEY || "bmqp:w:meta",
+  workerMetadataStream: process.env.WORKER_METADATA_KEY || "bmpq:w:stream",
+  maxLenWorkerMetadataStream:
+    process.env.MAX_LEN_WORKER_METADATA_STREAM ? parseInt(process.env.MAX_LEN_WORKER_METADATA_STREAM) : 100,
 }

@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 
 import { Job, Worker } from "bullmq";
 import { Redis, Cluster } from "ioredis";
@@ -10,12 +11,16 @@ import { config } from "../../config";
 const debugEnabled = config.debugEnabled;
 
 const workers: { [queueName: string]: Worker } = {};
+const metadatasShas: { [queueName: string]: string } = {};
 
 const workerMetadataKey = config.workerMetadataKey;
+const workerMetadataStream = config.workerMetadataStream;
+const workerStreamBlockingTime = 5000;
 
+const abortController = new AbortController();
 export const gracefulShutdownWorkers = async () => {
   info(`Closing workers...`);
-
+  abortController.abort();
   const closingWorkers = Object.keys(workers).map(async (queueName) => workers[queueName].close());
   await Promise.all(closingWorkers);
   info('Workers closed');
@@ -24,7 +29,7 @@ export const gracefulShutdownWorkers = async () => {
 const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, connection: Redis | Cluster): Worker => {
   const { endpoint: workerEndpoint, opts: workerOptions } = workerMetadata;
 
-  debugEnabled && debug(`Starting worker for queue ${queueName} with endpoint ${workerMetadata.endpoint.url} and options ${workerMetadata.opts || 'default'}`);
+  debugEnabled && debug(`Starting worker for queue ${queueName} with endpoint ${workerMetadata.endpoint.url} and options ${JSON.stringify(workerMetadata.opts) || 'default'}`);
 
   const worker = new Worker(queueName, async (job: Job, token?: string) => {
     debugEnabled && debug(`Processing job ${job.id} from queue ${queueName} with endpoint ${workerEndpoint.url}`);
@@ -72,10 +77,111 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
   return worker;
 };
 
+let lastEventId: string | undefined;
+
+export const workerStreamListener = async (redisClient: Redis | Cluster, abortSignal: AbortSignal) => {
+  const streamBlockingClient = redisClient.duplicate();
+  let running = true;
+
+  abortSignal.addEventListener('abort', () => {
+    running = false;
+    streamBlockingClient.disconnect();
+  });
+
+  while (running) {
+    const streams = await streamBlockingClient.xread('BLOCK', workerStreamBlockingTime, 'STREAMS', workerMetadataStream, lastEventId || '0');
+
+    // If we got no events, continue to the next iteration
+    if (!streams || streams.length === 0) {
+      continue;
+    }
+
+    const stream = streams[0];
+
+    debugEnabled && debug(`Received ${streams.length} event${streams.length > 1 ? "s" : ""} from stream ${workerMetadataStream}`);
+
+    const [_streamName, events] = stream;
+
+    for (const [eventId, fields] of events) {
+
+      lastEventId = eventId;
+      const queueName = fields[1];
+      const existingWorker = workers[queueName];
+      const existingSha = metadatasShas[queueName];
+
+      const workerMetadataRaw = await redisClient.hget(workerMetadataKey, queueName);
+
+      // If workerMetadatadaVersion is older than the event id, we need to update the worker
+      if (workerMetadataRaw) {
+        const workerMetadataSha256 = createHash('sha256').update(workerMetadataRaw).digest('hex');
+
+        if ((existingSha !== workerMetadataSha256)) {
+          const workerMetadata = JSON.parse(workerMetadataRaw);
+          workers[queueName] = workerFromMetadata(queueName, workerMetadata, redisClient);
+          metadatasShas[queueName] = workerMetadataSha256;
+          if (existingWorker) {
+            await existingWorker.close();
+          }
+        }
+      } else {
+        // worker has been removed
+        debugEnabled && debug(`Worker for queue ${queueName} has been removed`);
+
+        if (existingWorker) {
+          await existingWorker.close();
+          delete workers[queueName];
+          delete metadatasShas[queueName];
+        }
+      }
+    }
+  }
+}
+
 export const WorkerHttpController = {
-  init: (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
+  loadScripts: async (redisClient: Redis | Cluster) => {
+    const luaScripts = {
+      updateWorkerMetadata: `
+        local workerMetadataKey = KEYS[1]
+        local workerMetadataStream = KEYS[2]
+        local queueName = ARGV[1]
+        local workerMetadata = ARGV[2]
+        local streamMaxLen = ARGV[3]
+        redis.call('HSET', workerMetadataKey, queueName, workerMetadata)
+        
+        local eventId = redis.call('XADD', workerMetadataStream, 'MAXLEN', streamMaxLen, '*', 'worker', queueName)
+        return eventId
+      `,
+      removeWorkerMetadata: `
+        local workerMetadataKey = KEYS[1]
+        local workerMetadataStream = KEYS[2]
+        local queueName = ARGV[1]
+        local streamMaxLen = ARGV[2]
+        local removedWorker = redis.call('HDEL', workerMetadataKey, queueName)
+        if removedWorker == 1 then
+          local eventId = redis.call('XADD', workerMetadataStream, 'MAXLEN', streamMaxLen, '*', 'worker', queueName)
+          return { removedWorker, eventId }
+        end
+      `
+    }
+
+    for (const [scriptName, script] of Object.entries(luaScripts)) {
+      redisClient.defineCommand(scriptName, { numberOfKeys: 2, lua: script });
+    }
+  },
+
+  /**
+   * Load workers from Redis and start them.
+   * 
+   * @param redisClient 
+   * @param workersRedisClient 
+   */
+  loadWorkers: async (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
     // Load workers from Redis and start them
     debugEnabled && debug('Loading workers from Redis...');
+    const result = await redisClient.xrevrange(config.workerMetadataStream, '+', '-', 'COUNT', 1);
+    if (result.length > 0) {
+      [[lastEventId]] = result
+    }
     const stream = redisClient.hscanStream(workerMetadataKey, { count: 10 });
     stream.on('data', (result: string[]) => {
       for (let i = 0; i < result.length; i += 2) {
@@ -84,10 +190,11 @@ export const WorkerHttpController = {
 
         const workerMetadata = JSON.parse(value) as WorkerMetadata;
         workers[queueName] = workerFromMetadata(queueName, workerMetadata, workersRedisClient);
+        metadatasShas[queueName] = createHash('sha256').update(value).digest('hex');
       }
     });
 
-    return new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       stream.on('end', () => {
         debugEnabled && debug('Workers loaded');
         resolve();
@@ -97,6 +204,11 @@ export const WorkerHttpController = {
         reject(err);
       });
     });
+  },
+  init: async (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
+    await WorkerHttpController.loadScripts(redisClient);
+    await WorkerHttpController.loadWorkers(redisClient, workersRedisClient);
+    workerStreamListener(workersRedisClient, abortController.signal);
   },
 
   /**
@@ -123,23 +235,25 @@ export const WorkerHttpController = {
     }
 
     const { queue: queueName } = workerMetadata;
-    const { redisClient, workersRedisClient } = opts;
+    const { redisClient } = opts;
 
-    // Replace worker if it already exists
-    const existingWorker = workers[queueName];
-    const worker = workerFromMetadata(queueName, workerMetadata, workersRedisClient);
-    workers[queueName] = worker;
-
-    // Upsert worker metadata in Redis for the worker to be able to reconnect after a restart
+    // Upsert worker metadata and notify all listeners about the change.
     try {
-      await redisClient.hset(workerMetadataKey, queueName, JSON.stringify(workerMetadata));
+      const eventId = await (<any>redisClient)['updateWorkerMetadata'](
+        workerMetadataKey,
+        workerMetadataStream,
+        queueName,
+        JSON.stringify(workerMetadata),
+        config.maxLenWorkerMetadataStream
+      );
+
+      lastEventId = eventId as string;
+
       return new Response('OK', { status: 200 });
     } catch (err) {
-      return new Response('Failed to store worker metadata in Redis', { status: 500 });
-    } finally {
-      if (existingWorker) {
-        await existingWorker.close();
-      }
+      const errMsg = `Failed to store worker metadata in Redis: ${err}`;
+      debugEnabled && debug(errMsg);
+      return new Response(errMsg, { status: 500 });
     }
   },
 
@@ -172,21 +286,36 @@ export const WorkerHttpController = {
     const { queueName } = opts.params;
     const { redisClient } = opts;
 
-    const worker = workers[queueName];
-    delete workers[queueName];
     try {
-      if (worker) {
-        await worker.close();
-      }
-
-      const removedWorker = await redisClient.hdel(workerMetadataKey, queueName);
-      if (removedWorker === 0 && !worker) {
+      const result = await (<any>redisClient)['removeWorkerMetadata'](
+        workerMetadataKey,
+        workerMetadataStream,
+        queueName,
+        config.maxLenWorkerMetadataStream
+      );
+      if (!result && !workers[queueName]) {
         return new Response('Worker not found', { status: 404 });
       }
 
+      lastEventId = result[1];
+
       return new Response('OK', { status: 200 });
-    } catch (err) {
-      return new Response('Failed to remove worker', { status: 500 });
+    } catch (_err) {
+      const err = _err as Error;
+      debugEnabled && debug(`Failed to remove worker: ${err}`);
+      return new Response(`Failed to remove worker ${err.toString()}`, { status: 500 });
     }
+  },
+
+  /**
+   * Cleans the proxy metadata from the Redis host.
+   * @param redisClient 
+   * @returns 
+   */
+  cleanMetadata: async (redisClient: Redis | Cluster) => {
+    const multi = redisClient.multi();
+    multi.del(workerMetadataKey);
+    multi.del(workerMetadataStream);
+    return multi.exec();
   }
 }

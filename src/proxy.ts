@@ -50,21 +50,30 @@ const websocket = {
   perMessageDeflate: false,
 };
 
+/**
+ * Options available for the proxy.
+ */
 export interface ProxyOpts {
-  skipInitWorkers?: boolean;
-}
+};
+
+/**
+ * Cleans the proxy metadata from the Redis host.
+ * @param connection 
+ */
+export const cleanProxy = async (connection: Redis | Cluster,
+) => {
+  return WorkerHttpController.cleanMetadata(connection);
+};
 
 export const startProxy = async (
   port: number,
   connection: Redis | Cluster,
   workersConnection: Redis | Cluster,
-  opts: ProxyOpts = {},
+  _opts: ProxyOpts = {},
 ) => {
   console.log(chalk.gray(asciiArt))
 
-  if (opts.skipInitWorkers !== true) {
-    await WorkerHttpController.init(connection, workersConnection);
-  }
+  await WorkerHttpController.init(connection, workersConnection);
 
   const server = Bun.serve<WebSocketData>({
     port,

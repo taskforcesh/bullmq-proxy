@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test";
 import { WorkerHttpController } from './worker-http-controller';
+import { config } from '../../config';
 
 const fakeAddValidReq = {
   json: () => Promise.resolve({
@@ -16,7 +17,6 @@ const fakeAddValidReq = {
 describe('WorkerHttpController.init', () => {
 
   it('should initialize workers from Redis metadata', async () => {
-
     await expect(WorkerHttpController.init(new Redis(), new Redis({
       maxRetriesPerRequest: null,
     }))).resolves.toBeUndefined;
@@ -32,10 +32,11 @@ mock.module('node-fetch', () => jest.fn(() => Promise.resolve({
 describe('WorkerHttpController.addWorker', () => {
 
   let redisClient: Redis;
-  beforeAll(() => {
+  beforeAll(async () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+    await WorkerHttpController.loadScripts(redisClient);
   });
 
   afterAll(async () => {
@@ -43,7 +44,6 @@ describe('WorkerHttpController.addWorker', () => {
   });
 
   it('should add a worker with valid metadata', async () => {
-
     const response = await WorkerHttpController.addWorker({
       req: fakeAddValidReq,
       redisClient,
@@ -53,6 +53,17 @@ describe('WorkerHttpController.addWorker', () => {
     expect(response).toBeDefined();
     expect(await response.text()).toBe("OK");
     expect(response!.status).toBe(200); // Assuming 200 is the success status code
+
+    // Verify worker was added in Redis
+    const workerMetadataKey = config.workerMetadataKey;
+    const workerMetadata = await redisClient.hgetall(workerMetadataKey);
+    expect(workerMetadata).toBeDefined();
+    expect(workerMetadata.validQueue).toBeDefined();
+
+    // Verify event was added in Redis
+    const workerMetadataStream = config.workerMetadataStream;
+    const streamLength = await redisClient.xlen(workerMetadataStream);
+    expect(streamLength).toBeGreaterThan(0);
   });
 
   it('should return a 400 response for invalid metadata', async () => {
@@ -73,10 +84,11 @@ describe('WorkerHttpController.addWorker', () => {
 
 describe('WorkerHttpController.removeWorker', () => {
   let redisClient: Redis;
-  beforeAll(() => {
+  beforeAll(async () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+    await WorkerHttpController.loadScripts(redisClient);
   });
 
   it('should remove a worker successfully', async () => {
@@ -98,6 +110,17 @@ describe('WorkerHttpController.removeWorker', () => {
     const responseRemove = await WorkerHttpController.removeWorker(opts);
     expect(responseRemove).toBeDefined();
     expect(responseRemove!.status).toBe(200); // Assuming 200 indicates success
+
+    // Verify worker was removed from Redis
+    const workerMetadataKey = config.workerMetadataKey;
+    const workerMetadata = await redisClient.hgetall(workerMetadataKey);
+    expect(workerMetadata).toBeDefined();
+    expect(workerMetadata.validQueue).toBeUndefined();
+
+    // Verify event was added in Redis
+    const workerMetadataStream = config.workerMetadataStream;
+    const streamLength = await redisClient.xlen(workerMetadataStream);
+    expect(streamLength).toBeGreaterThan(0);
   });
 
   it('should return 404 for non existing workers', async () => {

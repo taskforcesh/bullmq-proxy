@@ -18,6 +18,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await redisClient.quit();
+  await workersRedisClient.quit();
 });
 
 describe('WorkerJobHttpController.updateProgress', () => {
@@ -38,9 +39,6 @@ describe('WorkerJobHttpController.updateProgress', () => {
     const response = await WorkerJobHttpController.updateProgress(opts);
     expect(response.status).toBe(500);
     expect(await response.text()).toBe('Missing key for job 1. updateProgress');
-
-    await opts.redisClient.quit();
-    await opts.workersRedisClient.quit();
   });
 
   it('updates job progress and returns a 200 response', async () => {
@@ -130,7 +128,7 @@ describe('WorkerJobHttpController.getLogs', () => {
     expect(await response.text()).toBe('Invalid start or length');
   });
 
-  it.only('returns a 200 response with the logs', async () => {
+  it('returns a 200 response with the logs', async () => {
     const jobId = "42";
     const logsKey = `${queuePrefix}:valid:${jobId}:logs`;
 
