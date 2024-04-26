@@ -101,7 +101,8 @@ func (ws *WebSocket[T]) listenForResponses() {
 		err := ws.conn.ReadJSON(&msg)
 		if err != nil {
 			log.Println("Error reading message:", err)
-			continue
+			ws.Close()
+			return
 		}
 
 		ws.pendingMsgLock.Lock()

@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	// add other required imports
 	"taskforce.sh/bullmq_proxy_client/pkg/client/proxyapi"
@@ -25,8 +26,10 @@ type QueueWorker struct {
 }
 
 func NewWorker(ctx context.Context, host string, queueName string, token string, concurrency int, processor ProcessorFunc) (*QueueWorker, error) {
-	url := fmt.Sprintf("%s/queues/%s/process/%d?token=%s", host, queueName, concurrency, token)
-	ws, err := wsclient.New[*proxyapi.WorkerCommand](ctx, url)
+	url := fmt.Sprintf("%s/ws/queues/%s/process/%d", host, queueName, concurrency)
+	h := make(http.Header)
+	h.Set("Authorization", "Bearer "+token)
+	ws, err := wsclient.New[*proxyapi.WorkerCommand](ctx, url, h)
 	if err != nil {
 		return nil, err
 	}

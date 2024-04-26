@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"taskforce.sh/bullmq_proxy_client/pkg/client/proxyapi"
 	"taskforce.sh/bullmq_proxy_client/pkg/client/wsclient"
@@ -13,8 +14,8 @@ type Queue struct {
 	ws *wsclient.WebSocket[*proxyapi.QueueCommand]
 }
 
-func NewQueue(ctx context.Context, url string) (*Queue, error) {
-	ws, err := wsclient.New[*proxyapi.QueueCommand](ctx, url)
+func NewQueue(ctx context.Context, url string, headers http.Header) (*Queue, error) {
+	ws, err := wsclient.New[*proxyapi.QueueCommand](ctx, url, headers)
 	if err != nil {
 		return nil, err
 	}

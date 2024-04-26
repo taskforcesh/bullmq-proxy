@@ -2,6 +2,7 @@ package wsclient
 
 import (
 	"context"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
@@ -11,8 +12,11 @@ import (
 )
 
 func TestAddJob(t *testing.T) {
+	ctx := context.Background()
+	h := make(http.Header)
+	h.Set("Authorization", "Bearer 1234")
 	const numJobs = 10
-	q, err := queue.NewQueue(context.Background(), "ws://localhost:8080/queues/test?token=1234")
+	q, err := queue.NewQueue(ctx, "ws://localhost:8080/ws/queues/test", h)
 	require.NoError(t, err)
 
 	// Use a wait group to wait for all goroutines to finish
@@ -52,11 +56,12 @@ func TestAddJob(t *testing.T) {
 	// Channels for signaling
 	var jobCount int
 
-	worker := queue.NewWorker("ws://localhost:8080", "test", "1234", 10, func(job interface{}) (interface{}, error) {
+	worker, err := queue.NewWorker(ctx, "ws://localhost:8080", "test", "1234", 10, func(job interface{}) (interface{}, error) {
 		t.Logf("Processing job: %v", job)
 		jobCount++
 		return nil, nil
 	})
+	require.NoError(t, err)
 
 	// Sleep for a bit to allow the worker to  process
 	time.Sleep(8 * time.Second)
