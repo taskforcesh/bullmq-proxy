@@ -1,16 +1,13 @@
 package queue
 
 import (
+	"context"
 	"fmt"
 
 	// add other required imports
-	"taskforce.sh/bullmq_proxy_client/wsclient"
+	"taskforce.sh/bullmq_proxy_client/pkg/client/proxyapi"
+	"taskforce.sh/bullmq_proxy_client/pkg/client/wsclient"
 )
-
-type WorkerCommand struct {
-	Type   string       `json:"type"`
-	Payload interface{} `json:"payload"`
-}
 
 type JobResult struct {
 	Result interface{} `json:"result"`
@@ -24,22 +21,25 @@ type JobError struct {
 type ProcessorFunc func(job interface{}) (interface{}, error)
 
 type QueueWorker struct {
-	ws *wsclient.WebSocket[WorkerCommand]
+	ws *wsclient.WebSocket[*proxyapi.WorkerCommand]
 }
 
-func NewWorker(host string, queueName string, token string, concurrency int, processor ProcessorFunc) *QueueWorker {
+func NewWorker(ctx context.Context, host string, queueName string, token string, concurrency int, processor ProcessorFunc) (*QueueWorker, error) {
 	url := fmt.Sprintf("%s/queues/%s/process/%d?token=%s", host, queueName, concurrency, token)
-	var ws = wsclient.New[WorkerCommand](url)
+	ws, err := wsclient.New[*proxyapi.WorkerCommand](ctx, url)
+	if err != nil {
+		return nil, err
+	}
 
 	var qw = &QueueWorker{ws: ws}
 	go qw.listen(processor)
 
-	return qw;
+	return qw, nil
 }
 
 func (qw *QueueWorker) listen(processor ProcessorFunc) {
 	for {
-		message, err := qw.ws.ReceiveWebSocketMessage() // assuming this blocks until a message is received
+		message, err := qw.ws.ReceiveMessage() // assuming this blocks until a message is received
 		if err != nil {
 			fmt.Printf("Error receiving message: %v\n", err)
 			continue

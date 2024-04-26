@@ -1,11 +1,14 @@
 package wsclient
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,8 +22,8 @@ type Message struct {
 */
 
 type Message[T any] struct {
-	ID   int    `json:"id"`
-	Data T      `json:"data"`
+	ID   int `json:"id"`
+	Data T   `json:"data"`
 }
 
 type QueueResult struct {
@@ -46,38 +49,54 @@ type PendingMessage[T any] struct {
 
 // Struct to hold the WebSocket connection
 type WebSocket[T any] struct {
-	conn *websocket.Conn
-	currentMsgID int
-	pendingMsgs map[int]chan Message[QueueResult]
-	pendingMsgLock sync.Mutex
+	conn         *websocket.Conn
+	currentMsgID atomic.Int64
+
 	writeMutex sync.Mutex
+
+	pendingMsgs    map[int]chan Message[QueueResult]
+	pendingMsgLock sync.Mutex
+
+	stopCh    chan struct{}
+	closeOnce sync.Once
 }
 
-func New[T any](url string) *WebSocket[T] {
-	return ConnectWebSocket[T](url)
+func New[T any](ctx context.Context, url string, headers http.Header) (*WebSocket[T], error) {
+	return ConnectWebSocket[T](ctx, url, headers)
 }
 
-func ConnectWebSocket[T any](url string) *WebSocket[T] {
-	var conn, _, err = websocket.DefaultDialer.Dial(url, nil)
+var defaultUpgrader = websocket.Upgrader{
+	HandshakeTimeout:  responseTimeout,
+	EnableCompression: false,
+}
+
+func ConnectWebSocket[T any](ctx context.Context, url string, headers http.Header) (*WebSocket[T], error) {
+	var conn, _, err = websocket.DefaultDialer.DialContext(ctx, url, headers)
 	if err != nil {
 		log.Fatal("Error connecting to WebSocket:", err)
 	}
-	
+
 	var ws = &WebSocket[T]{
-		conn: conn,
-		currentMsgID: 1,
-		pendingMsgs:  make(map[int]chan Message[QueueResult]),
+		conn:           conn,
+		pendingMsgs:    make(map[int]chan Message[QueueResult]),
 		pendingMsgLock: sync.Mutex{},
-		writeMutex: sync.Mutex{},
+		writeMutex:     sync.Mutex{},
+		stopCh:         make(chan struct{}),
 	}
+	ws.currentMsgID.Add(1)
 
 	go ws.listenForResponses()
 
-	return ws
+	return ws, nil
 }
 
 func (ws *WebSocket[T]) listenForResponses() {
 	for {
+		select {
+		case <-ws.stopCh:
+			return
+		default:
+		}
 		var msg Message[QueueResult]
 		err := ws.conn.ReadJSON(&msg)
 		if err != nil {
@@ -94,26 +113,27 @@ func (ws *WebSocket[T]) listenForResponses() {
 	}
 }
 
-func (ws *WebSocket[T]) SendWebSocketMessage(msg T) (*json.RawMessage, error) {
-	ws.pendingMsgLock.Lock()
-	msgID := ws.currentMsgID
-	ws.currentMsgID++
-	ws.pendingMsgLock.Unlock()
+func (ws *WebSocket[T]) ReceiveMessage() (*Message[T], error) {
+	var msg Message[T]
+	err := ws.conn.ReadJSON(&msg)
+	if err != nil {
+		return nil, err
+	}
+	return &msg, err
+}
 
+func (ws *WebSocket[T]) Request(msg T) (*json.RawMessage, error) {
+	msgID := int(ws.currentMsgID.Add(1))
 	respChan := make(chan Message[QueueResult])
 	ws.pendingMsgLock.Lock()
 	ws.pendingMsgs[msgID] = respChan
 	ws.pendingMsgLock.Unlock()
 
-	message := Message[T]{
+	message := &Message[any]{
 		ID:   msgID,
 		Data: msg,
 	}
-
-	ws.writeMutex.Lock()  // Lock before writing to the connection
-	err := ws.conn.WriteJSON(message)
-	defer ws.writeMutex.Unlock()  // Unlock after writing
-
+	err := ws.writeMessage(message)
 	if err != nil {
 		return nil, err
 	}
@@ -130,25 +150,27 @@ func (ws *WebSocket[T]) SendWebSocketMessage(msg T) (*json.RawMessage, error) {
 	}
 }
 
-func (ws *WebSocket[T]) ReceiveWebSocketMessage() (Message[T], error) {
-	var msg Message[T]
-	err := ws.conn.ReadJSON(&msg)
-	return msg, err
-}
-
-func (ws *WebSocket[T]) Close() {
-	ws.conn.Close()
-}
-
-func (ws *WebSocket[T]) Respond(id int, data interface{}) error {
-	message := Message[any]{
+func (ws *WebSocket[T]) Respond(id int, data any) error {
+	message := &Message[any]{
 		ID:   id,
 		Data: data,
 	}
+	return ws.writeMessage(message)
+}
 
-	ws.writeMutex.Lock()  // Lock before writing to the connection
-	err := ws.conn.WriteJSON(message)
-	defer ws.writeMutex.Unlock()  // Unlock after writing
+func (ws *WebSocket[T]) writeMessage(msg *Message[any]) error {
+	ws.writeMutex.Lock() // Lock before writing to the connection
+	err := ws.conn.WriteJSON(msg)
+	ws.writeMutex.Unlock() // Unlock after writing
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	return err
+func (ws *WebSocket[T]) Close() {
+	ws.closeOnce.Do(func() {
+		close(ws.stopCh)
+		ws.conn.Close()
+	})
 }

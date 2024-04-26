@@ -1,24 +1,24 @@
 package queue
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"taskforce.sh/bullmq_proxy_client/wsclient"
+	"taskforce.sh/bullmq_proxy_client/pkg/client/proxyapi"
+	"taskforce.sh/bullmq_proxy_client/pkg/client/wsclient"
 )
 
-type QueueCommand struct {
-	Fn   string        `json:"fn"`
-	Args []interface{} `json:"args"`
-}
-
 type Queue struct {
-	ws *wsclient.WebSocket[QueueCommand]
+	ws *wsclient.WebSocket[*proxyapi.QueueCommand]
 }
 
-func NewQueue(url string) *Queue {
-	var ws = wsclient.New[QueueCommand](url)
-	return &Queue{ws: ws}
+func NewQueue(ctx context.Context, url string) (*Queue, error) {
+	ws, err := wsclient.New[*proxyapi.QueueCommand](ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	return &Queue{ws: ws}, nil
 }
 
 type JobResponse struct {
@@ -41,12 +41,12 @@ type JobOpts struct {
 }
 
 func (q *Queue) AddJob(name string, data interface{}, opts interface{}) (*JobResponse, error) {
-	cmd := QueueCommand{
+	cmd := &proxyapi.QueueCommand{
 		Fn:   "add",
 		Args: []interface{}{name, data, opts},
 	}
 
-	rawData, err := q.ws.SendWebSocketMessage(cmd)
+	rawData, err := q.ws.Request(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to send message: %v", err)
 	}
@@ -64,11 +64,11 @@ func (q *Queue) AddJob(name string, data interface{}, opts interface{}) (*JobRes
 }
 
 func (q *Queue) PauseJob() {
-	cmd := QueueCommand{
+	cmd := &proxyapi.QueueCommand{
 		Fn:   "pause",
 		Args: []interface{}{},
 	}
-	q.ws.SendWebSocketMessage(cmd)
+	q.ws.Request(cmd)
 }
 
 func (q *Queue) Close() {
