@@ -22,17 +22,17 @@ func NewQueue(url string) *Queue {
 }
 
 type JobResponse struct {
-	AttemptsMade        int                   `json:"attemptsMade,omitempty"`
-	Data                map[string]interface{} `json:"data,omitempty"`
-	Delay               int                   `json:"delay,omitempty"`
-	ID                  string                `json:"id,omitempty"`
-	Name                string                `json:"name,omitempty"`
-	Opts                JobOpts               `json:"opts,omitempty"`
-	Progress            int                   `json:"progress,omitempty"`
-	QueueQualifiedName  string                `json:"queueQualifiedName,omitempty"`
-	ReturnValue         interface{}            `json:"returnvalue,omitempty"`
-	Stacktrace          interface{}            `json:"stacktrace,omitempty"`
-	Timestamp           int64                 `json:"timestamp,omitempty"`
+	AttemptsMade       int                    `json:"attemptsMade,omitempty"`
+	Data               map[string]interface{} `json:"data,omitempty"`
+	Delay              int                    `json:"delay,omitempty"`
+	ID                 string                 `json:"id,omitempty"`
+	Name               string                 `json:"name,omitempty"`
+	Opts               JobOpts                `json:"opts,omitempty"`
+	Progress           int                    `json:"progress,omitempty"`
+	QueueQualifiedName string                 `json:"queueQualifiedName,omitempty"`
+	ReturnValue        interface{}            `json:"returnvalue,omitempty"`
+	Stacktrace         interface{}            `json:"stacktrace,omitempty"`
+	Timestamp          int64                  `json:"timestamp,omitempty"`
 }
 
 type JobOpts struct {
@@ -51,7 +51,7 @@ func (q *Queue) AddJob(name string, data interface{}, opts interface{}) (*JobRes
 		return nil, fmt.Errorf("Failed to send message: %v", err)
 	}
 
-	if(rawData == nil) {
+	if rawData == nil {
 		return nil, fmt.Errorf("Failed to receive response")
 	}
 
