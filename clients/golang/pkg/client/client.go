@@ -64,26 +64,38 @@ func (c *Client) DialQueueEvents(ctx context.Context, queueName string) (*wsclie
 	return wsclient.New[any](ctx, joinedPath, c.httpClient.Header)
 }
 
-func (c *Client) AddJobs(ctx context.Context, queueName string, jobs []*proxyapi.JobJson) ([]*proxyapi.Job, error) {
-	c.httpClient.R().
+func (c *Client) AddJobs(ctx context.Context, queueName string, jobs []*proxyapi.JobSpec) (out []*proxyapi.Job, err error) {
+	_, err = c.httpClient.R().
 		SetBody(jobs).
+		SetResult(out).
 		ForceContentType("application/json").
 		Post(fmt.Sprintf("/queues/%s/jobs", queueName))
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
-func (c *Client) GetJobs(ctx context.Context, queueName string) (*proxyapi.GetJobsResponse, error) {
-	c.httpClient.R().
+func (c *Client) GetJobs(ctx context.Context, queueName string) (out *proxyapi.GetJobsResponse, err error) {
+	_, err = c.httpClient.R().
+		SetResult(out).
 		Get(fmt.Sprintf("/queues/%s/jobs", queueName))
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
-func (c *Client) GetJob(ctx context.Context, queueName string, jobId string) (*proxyapi.Job, error) {
-	c.httpClient.R().
+func (c *Client) GetJob(ctx context.Context, queueName string, jobId string) (out *proxyapi.Job, err error) {
+	_, err = c.httpClient.R().
+		SetResult(out).
 		Get(fmt.Sprintf("/queues/%s/jobs/%s", queueName, jobId))
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
-func (c *Client) AddWorker(ctx context.Context, jobs []*proxyapi.JobJson) error {
-	_, err := c.httpClient.R().
+func (c *Client) AddWorker(ctx context.Context, jobs []*proxyapi.JobSpec) (err error) {
+	_, err = c.httpClient.R().
 		SetBody(jobs).
 		ForceContentType("application/json").
 		Post("/workers")
@@ -92,10 +104,14 @@ func (c *Client) AddWorker(ctx context.Context, jobs []*proxyapi.JobJson) error 
 	}
 	return nil
 }
-func (c *Client) GetWorkers(ctx context.Context) (*proxyapi.WorkerMetadata, error) {
-	c.httpClient.R().
+func (c *Client) GetWorkers(ctx context.Context) (out *proxyapi.WorkerMetadata, err error) {
+	_, err = c.httpClient.R().
+		SetResult(out).
 		Get("/workers")
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 func (c *Client) RemoveWorker(ctx context.Context, queueName string) error {
 	_, err := c.httpClient.R().
@@ -106,8 +122,8 @@ func (c *Client) RemoveWorker(ctx context.Context, queueName string) error {
 	return nil
 }
 
-func (c *Client) UpdateProgress(ctx context.Context, queueName string, jobId string, progress any) error {
-	_, err := c.httpClient.R().
+func (c *Client) UpdateProgress(ctx context.Context, queueName string, jobId string, progress any) (err error) {
+	_, err = c.httpClient.R().
 		SetBody(progress).
 		ForceContentType("application/json").
 		Get(fmt.Sprintf("/queues/%s/jobs/%s/progress", queueName, jobId))
@@ -116,8 +132,8 @@ func (c *Client) UpdateProgress(ctx context.Context, queueName string, jobId str
 	}
 	return nil
 }
-func (c *Client) AddLog(ctx context.Context, queueName string, jobId string, log string) error {
-	_, err := c.httpClient.R().
+func (c *Client) AddLog(ctx context.Context, queueName string, jobId string, log string) (err error) {
+	_, err = c.httpClient.R().
 		SetBody(log).
 		ForceContentType("application/json").
 		Get(fmt.Sprintf("/queues/%s/jobs/%s/logs", queueName, jobId))
@@ -126,8 +142,21 @@ func (c *Client) AddLog(ctx context.Context, queueName string, jobId string, log
 	}
 	return nil
 }
-func (c *Client) GetLogs(ctx context.Context, queueName string, jobId string, start int, length int) (*proxyapi.JobLog, error) {
-	c.httpClient.R().
+func (c *Client) GetLogs(ctx context.Context, queueName string, jobId string, start int, length int) (out *proxyapi.JobLog, err error) {
+	_, err = c.httpClient.R().
+		SetResult(out).
 		Get(fmt.Sprintf("/queues/%s/jobs/%s/logs", queueName, jobId))
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *Client) ServerInfo(ctx context.Context) (string, error) {
+	resp, err := c.httpClient.R().Get("/")
+	if err != nil {
+		return "", err
+	}
+
+	return string(resp.Body()), nil
 }

@@ -1,11 +1,5 @@
 package proxyapi
 
-type JobJson struct {
-}
-
-type Job struct {
-}
-
 type GetJobsResponse struct {
 	Counts int    `json:"counts"`
 	Jobs   []*Job `json:"jobs"`

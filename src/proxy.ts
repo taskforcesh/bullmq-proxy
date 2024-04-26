@@ -58,7 +58,7 @@ export interface ProxyOpts {
 
 /**
  * Cleans the proxy metadata from the Redis host.
- * @param connection 
+ * @param connection
  */
 export const cleanProxy = async (connection: Redis | Cluster,
 ) => {
