@@ -7,9 +7,6 @@ type GetJobsResponse struct {
 	Length int    `json:"length"`
 }
 
-type WorkerMetadata struct {
-}
-
 type JobLog struct {
 	Logs  []string `json:"logs"`
 	Count int      `json:"count"`
