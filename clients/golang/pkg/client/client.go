@@ -25,8 +25,7 @@ type ClientOpts func(*Client)
 
 func NewClient(opts ...ClientOpts) *Client {
 	c := &Client{
-		rootUrl:   "http://localhost:8080",
-		authToken: "",
+		rootUrl: "http://localhost:8080",
 	}
 	for _, v := range opts {
 		v(c)
@@ -82,7 +81,7 @@ func (c *Client) GetJobs(ctx context.Context, queueName string) (out *proxyapi.G
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return out, nil
 }
 func (c *Client) GetJob(ctx context.Context, queueName string, jobId string) (out *proxyapi.Job, err error) {
 	_, err = c.httpClient.R().
@@ -91,7 +90,7 @@ func (c *Client) GetJob(ctx context.Context, queueName string, jobId string) (ou
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return out, nil
 }
 
 func (c *Client) AddWorker(ctx context.Context, jobs []*proxyapi.JobSpec) (err error) {
@@ -126,7 +125,7 @@ func (c *Client) UpdateProgress(ctx context.Context, queueName string, jobId str
 	_, err = c.httpClient.R().
 		SetBody(progress).
 		ForceContentType("application/json").
-		Get(fmt.Sprintf("/queues/%s/jobs/%s/progress", queueName, jobId))
+		Post(fmt.Sprintf("/queues/%s/jobs/%s/progress", queueName, jobId))
 	if err != nil {
 		return err
 	}
@@ -136,7 +135,7 @@ func (c *Client) AddLog(ctx context.Context, queueName string, jobId string, log
 	_, err = c.httpClient.R().
 		SetBody(log).
 		ForceContentType("application/json").
-		Get(fmt.Sprintf("/queues/%s/jobs/%s/logs", queueName, jobId))
+		Post(fmt.Sprintf("/queues/%s/jobs/%s/logs", queueName, jobId))
 	if err != nil {
 		return err
 	}

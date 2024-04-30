@@ -15,7 +15,7 @@ let workersConnection: Redis | Cluster;
 if (config.redis.url) {
   connection = new IORedis(config.redis.url, {
     retryStrategy: () => 3000,
-    maxRetriesPerRequest: 20,
+ //   maxRetriesPerRequest: 20,
     enableOfflineQueue: false,
   });
 } else {
@@ -25,7 +25,7 @@ if (config.redis.url) {
     password: config.redis.password,
     username: config.redis.username,
     tls: config.redis.tls,
-    maxRetriesPerRequest: 20,
+ //   maxRetriesPerRequest: 20,
     retryStrategy: () => 3000,
   });
 }
