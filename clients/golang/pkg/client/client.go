@@ -93,9 +93,9 @@ func (c *Client) GetJob(ctx context.Context, queueName string, jobId string) (ou
 	return out, nil
 }
 
-func (c *Client) AddWorker(ctx context.Context, jobs []*proxyapi.JobSpec) (err error) {
+func (c *Client) AddWorker(ctx context.Context, spec *proxyapi.WorkerMetadata) (err error) {
 	_, err = c.httpClient.R().
-		SetBody(jobs).
+		SetBody(spec).
 		ForceContentType("application/json").
 		Post("/workers")
 	if err != nil {

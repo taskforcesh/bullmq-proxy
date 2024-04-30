@@ -105,12 +105,14 @@ func (ws *WebSocket[T]) listenForResponses() {
 			return
 		}
 
-		ws.pendingMsgLock.Lock()
-		if ch, ok := ws.pendingMsgs[msg.ID]; ok {
-			ch <- msg
-			delete(ws.pendingMsgs, msg.ID)
-		}
-		ws.pendingMsgLock.Unlock()
+		func() {
+			ws.pendingMsgLock.Lock()
+			defer ws.pendingMsgLock.Unlock()
+			if ch, ok := ws.pendingMsgs[msg.ID]; ok {
+				ch <- msg
+				delete(ws.pendingMsgs, msg.ID)
+			}
+		}()
 	}
 }
 
