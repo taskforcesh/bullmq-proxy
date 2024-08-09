@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.3.0...v1.3.1) (2024-08-09)
+
+
+### Bug Fixes
+
+* upgrade bullmq dependency ([b65c055](https://github.com/taskforcesh/bullmq-proxy/commit/b65c055b96f7fbe47b174aa23615645454846f51))
+
 # [1.3.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.2.0...v1.3.0) (2024-03-20)
 
 
