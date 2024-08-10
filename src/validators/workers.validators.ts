@@ -1,7 +1,11 @@
-import { WorkerMetadata, WorkerEndpoint, WorkerSimpleOptions } from "../interfaces";
+import {
+  WorkerMetadata,
+  WorkerEndpoint,
+  WorkerSimpleOptions,
+} from "../interfaces";
 import { validateQueueName } from "./queue.validators";
 
-const validProtocols = new Set(['http:', 'https:']);
+const validProtocols = new Set(["http:", "https:"]);
 export function isValidUrl(s: string) {
   try {
     const url = new URL(s);
@@ -11,32 +15,41 @@ export function isValidUrl(s: string) {
   }
 }
 
-const allowedOnFinishFields = new Set(['count', 'age']);
-export const validateRemoveOnFinish = (removeOnFinish: {
-  count?: number;
-  age?: number;
-}, field: "removeOnComplete" | "removeOnFail") => {
+const allowedOnFinishFields = new Set(["count", "age"]);
+export const validateRemoveOnFinish = (
+  removeOnFinish: {
+    count?: number;
+    age?: number;
+  },
+  field: "removeOnComplete" | "removeOnFail"
+) => {
   for (const allowedField in removeOnFinish) {
     if (!allowedOnFinishFields.has(allowedField)) {
       throw new Error(`Invalid field: ${field}.${allowedField}`);
     }
   }
 
-  if (removeOnFinish.count && (!Number.isInteger(removeOnFinish.count) || removeOnFinish.count <= 0)) {
+  if (
+    removeOnFinish.count &&
+    (!Number.isInteger(removeOnFinish.count) || removeOnFinish.count <= 0)
+  ) {
     throw new Error(`Invalid ${field}.count`);
   }
 
-  if (removeOnFinish.age && (!Number.isInteger(removeOnFinish.age) || removeOnFinish.age <= 0)) {
+  if (
+    removeOnFinish.age &&
+    (!Number.isInteger(removeOnFinish.age) || removeOnFinish.age <= 0)
+  ) {
     throw new Error(`Invalid ${field}.age`);
   }
-}
+};
 
 const allowedWorkerOptionsFields = new Set([
-  'concurrency',
-  'removeOnComplete',
-  'removeOnFail',
-  'limiter',
-  'maxStalledCount'
+  "concurrency",
+  "removeOnComplete",
+  "removeOnFail",
+  "limiter",
+  "maxStalledCount",
 ]);
 export const validateWorkerOptions = (workerOptions: WorkerSimpleOptions) => {
   for (const field in workerOptions) {
@@ -45,36 +58,52 @@ export const validateWorkerOptions = (workerOptions: WorkerSimpleOptions) => {
     }
   }
 
-  if (workerOptions.limiter && (!Number.isInteger(workerOptions.limiter.max) || workerOptions.limiter.max <= 0)) {
-    throw new Error('Invalid limiter.max');
+  if (
+    workerOptions.limiter &&
+    (!Number.isInteger(workerOptions.limiter.max) ||
+      workerOptions.limiter.max <= 0)
+  ) {
+    throw new Error("Invalid limiter.max");
   }
 
-  if (workerOptions.limiter && (!Number.isInteger(workerOptions.limiter.duration) || workerOptions.limiter.duration <= 0)) {
-    throw new Error('Invalid limiter.duration');
+  if (
+    workerOptions.limiter &&
+    (!Number.isInteger(workerOptions.limiter.duration) ||
+      workerOptions.limiter.duration <= 0)
+  ) {
+    throw new Error("Invalid limiter.duration");
   }
 
-  if (workerOptions.maxStalledCount && (!Number.isInteger(workerOptions.maxStalledCount) || workerOptions.maxStalledCount <= 0)) {
-    throw new Error('Invalid maxStalledCount');
+  if (
+    workerOptions.maxStalledCount &&
+    (!Number.isInteger(workerOptions.maxStalledCount) ||
+      workerOptions.maxStalledCount <= 0)
+  ) {
+    throw new Error("Invalid maxStalledCount");
   }
 
-  if (workerOptions.concurrency && (!Number.isInteger(workerOptions.concurrency) || workerOptions.concurrency <= 0)) {
-    throw new Error('Invalid concurrency');
+  if (
+    workerOptions.concurrency &&
+    (!Number.isInteger(workerOptions.concurrency) ||
+      workerOptions.concurrency <= 0)
+  ) {
+    throw new Error("Invalid concurrency");
   }
 
   if (workerOptions.removeOnComplete) {
-    validateRemoveOnFinish(workerOptions.removeOnComplete, 'removeOnComplete');
+    validateRemoveOnFinish(workerOptions.removeOnComplete, "removeOnComplete");
   }
 
   if (workerOptions.removeOnFail) {
-    validateRemoveOnFinish(workerOptions.removeOnFail, 'removeOnFail');
+    validateRemoveOnFinish(workerOptions.removeOnFail, "removeOnFail");
   }
-}
+};
 
-const validHttpMethods = new Set(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
-const allowedEndpointFields = new Set(['url', 'method', 'headers', 'timeout']);
+const validHttpMethods = new Set(["POST", "PUT", "PATCH"]);
+const allowedEndpointFields = new Set(["url", "method", "headers", "timeout"]);
 
 export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
-  const requiredFields: (keyof WorkerEndpoint)[] = ['url', 'method'];
+  const requiredFields: (keyof WorkerEndpoint)[] = ["url", "method"];
   for (const field of requiredFields) {
     if (!workerEndpoint[field]) {
       throw new Error(`${field} is required`);
@@ -82,7 +111,7 @@ export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
   }
 
   if (!isValidUrl(workerEndpoint.url)) {
-    throw new Error('Invalid URL');
+    throw new Error("Invalid URL");
   }
 
   if (!validHttpMethods.has(workerEndpoint.method.toUpperCase())) {
@@ -95,14 +124,17 @@ export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
     }
   }
 
-  if (workerEndpoint.timeout && (!Number.isInteger(workerEndpoint.timeout) || workerEndpoint.timeout <= 0)) {
-    throw new Error('Invalid timeout');
+  if (
+    workerEndpoint.timeout &&
+    (!Number.isInteger(workerEndpoint.timeout) || workerEndpoint.timeout <= 0)
+  ) {
+    throw new Error("Invalid timeout");
   }
-}
+};
 
-const allowedWorkerMetaddaFields = new Set(['queue', 'endpoint', 'opts']);
+const allowedWorkerMetaddaFields = new Set(["queue", "endpoint", "opts"]);
 export const validateWorkerMetadata = (workerMetadata: WorkerMetadata) => {
-  const requiredFields: (keyof WorkerMetadata)[] = ['queue', 'endpoint'];
+  const requiredFields: (keyof WorkerMetadata)[] = ["queue", "endpoint"];
   for (const field of requiredFields) {
     if (!workerMetadata[field]) {
       throw new Error(`${field} is required`);
@@ -123,4 +155,4 @@ export const validateWorkerMetadata = (workerMetadata: WorkerMetadata) => {
   if (workerMetadata.opts) {
     validateWorkerOptions(workerMetadata.opts);
   }
-}
+};

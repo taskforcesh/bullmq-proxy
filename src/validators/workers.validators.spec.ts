@@ -93,12 +93,17 @@ describe('validateWorkerEndpoint', () => {
   });
 
   it('validates with correct fields', () => {
-    const endpoint = { url: 'https://example.com', method: 'GET' };
+    const endpoint = { url: 'https://example.com', method: 'POST' };
     expect(() => validateWorkerEndpoint(endpoint)).not.toThrow();
   });
 
+  it('throws with invalid method', () => {
+    const endpoint = { url: 'https://example.com', method: 'GET' };
+    expect(() => validateWorkerEndpoint(endpoint)).toThrow();
+  });
+
   it('throws an error for missing url', () => {
-    expect(() => validateWorkerEndpoint(<any>{ method: 'GET' })).toThrow('url is required');
+    expect(() => validateWorkerEndpoint(<any>{ method: 'PATCH' })).toThrow('url is required');
   });
 
   it('throws an error for missing method', () => {
@@ -110,11 +115,11 @@ describe('validateWorkerEndpoint', () => {
   });
 
   it('throws an error for invalid url', () => {
-    expect(() => validateWorkerEndpoint({ url: 'htp://example.com', method: 'GET' })).toThrow('Invalid URL');
+    expect(() => validateWorkerEndpoint({ url: 'htp://example.com', method: 'PUT' })).toThrow('Invalid URL');
   });
 
   it('throws an error for invalid url', () => {
-    expect(() => validateWorkerEndpoint({ url: 'not a url', method: 'GET' })).toThrow('Invalid URL');
+    expect(() => validateWorkerEndpoint({ url: 'not a url', method: 'POST' })).toThrow('Invalid URL');
   });
 });
 
@@ -124,21 +129,21 @@ describe('validateWorkerMetadata', () => {
   });
 
   it('validates with correct fields', () => {
-    const metadata = { queue: 'myQueue', endpoint: { url: 'https://example.com', method: 'GET' } };
+    const metadata = { queue: 'myQueue', endpoint: { url: 'https://example.com', method: 'POST' } };
     expect(() => validateWorkerMetadata(metadata)).not.toThrow();
   });
 
   // Additional tests for opts validation
   it('throws an error for invalid opts field', () => {
-    expect(() => validateWorkerMetadata({ queue: 'myQueue', endpoint: { url: 'https://example.com', method: 'GET' }, opts: <any>{ invalidField: true } })).toThrow('Invalid field');
+    expect(() => validateWorkerMetadata({ queue: 'myQueue', endpoint: { url: 'https://example.com', method: 'PUT' }, opts: <any>{ invalidField: true } })).toThrow('Invalid field');
   });
 
   it('throws an error for invalid queue name', () => {
-    expect(() => validateWorkerMetadata({ queue: 'ab', endpoint: { url: 'https://example.com', method: 'GET' } })).toThrow('queue name must be at least');
+    expect(() => validateWorkerMetadata({ queue: 'ab', endpoint: { url: 'https://example.com', method: 'PATCH' } })).toThrow('queue name must be at least');
   });
 
   it('throws an error for invalid queue name', () => {
-    expect(() => validateWorkerMetadata({ queue: 'a'.repeat(101), endpoint: { url: 'https://example.com', method: 'GET' } })).toThrow('queue name must be at most');
+    expect(() => validateWorkerMetadata({ queue: 'a'.repeat(101), endpoint: { url: 'https://example.com', method: 'POST' } })).toThrow('queue name must be at most');
   });
 
   it('throws an error for invalid endpoint', () => {
