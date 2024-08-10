@@ -9,8 +9,8 @@ type QueueHttpControllerOpts = Omit<HttpHandlerOpts, "workersRedisClient">;
 export const QueueHttpController = {
   /**
    * addJobs
-   * @param opts 
-   * @returns 
+   * @param opts
+   * @returns
    */
   addJobs: async (opts: QueueHttpControllerOpts) => {
     const queueName = opts.params.queueName;
@@ -90,8 +90,8 @@ export const QueueHttpController = {
 
   /**
    * getJob
-   * @param opts 
-   * @returns 
+   * @param opts
+   * @returns
    */
   getJob: async (opts: QueueHttpControllerOpts) => {
     const queueName = opts.params.queueName;
