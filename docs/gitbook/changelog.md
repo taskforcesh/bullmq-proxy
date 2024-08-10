@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.3.1...v1.4.0) (2024-08-10)
+
+
+### Features
+
+* **worker:** only support POST, PUT and PATCH verbs ([8975545](https://github.com/taskforcesh/bullmq-proxy/commit/8975545a635f9f650a1f088760cce3859236edc0))
+
 ## [1.3.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.3.0...v1.3.1) (2024-08-09)
 
 
