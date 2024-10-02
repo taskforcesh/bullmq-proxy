@@ -88,7 +88,7 @@ export const fetchHandler = (
     } else if (route.httpHandler) {
       return route.httpHandler({ 
         req,
-        params: route.params,
+        params: cleanURI(route.params),
         searchParams, 
         redisClient: connection,
         workersRedisClient: workersConnection
@@ -97,3 +97,10 @@ export const fetchHandler = (
       return new Response("Not found", { status: 404 });
     }
   }
+
+function cleanURI(params: Record<string, string>) {
+  for (let [key, value] of Object.entries(params)) {
+      params[key] = decodeURI(value);
+  }
+  return params;
+}
