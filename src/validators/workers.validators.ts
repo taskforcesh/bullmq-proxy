@@ -100,7 +100,7 @@ export const validateWorkerOptions = (workerOptions: WorkerSimpleOptions) => {
 };
 
 const validHttpMethods = new Set(["POST", "PUT", "PATCH"]);
-const allowedEndpointFields = new Set(["url", "method", "headers", "timeout"]);
+const allowedEndpointFields = new Set(["url", "method", "headers", "timeout", "body"]);
 
 export const validateWorkerEndpoint = (workerEndpoint: WorkerEndpoint) => {
   const requiredFields: (keyof WorkerEndpoint)[] = ["url", "method"];

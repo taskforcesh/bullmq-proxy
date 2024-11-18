@@ -26,4 +26,9 @@ export interface WorkerEndpoint {
    * configured to do so).
    */
   timeout?: number;
+
+  /**
+   * Optional body to include in the request to the endpoint.
+   */
+  body?: Record<string, any>;
 }

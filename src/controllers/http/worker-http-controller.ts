@@ -21,55 +21,77 @@ const abortController = new AbortController();
 export const gracefulShutdownWorkers = async () => {
   info(`Closing workers...`);
   abortController.abort();
-  const closingWorkers = Object.keys(workers).map(async (queueName) => workers[queueName].close());
+  const closingWorkers = Object.keys(workers).map(async (queueName) =>
+    workers[queueName].close()
+  );
   await Promise.all(closingWorkers);
-  info('Workers closed');
-}
+  info("Workers closed");
+};
 
-const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, connection: Redis | Cluster): Worker => {
+const workerFromMetadata = (
+  queueName: string,
+  workerMetadata: WorkerMetadata,
+  connection: Redis | Cluster
+): Worker => {
   const { endpoint: workerEndpoint, opts: workerOptions } = workerMetadata;
 
-  debugEnabled && debug(`Starting worker for queue ${queueName} with endpoint ${workerMetadata.endpoint.url} and options ${JSON.stringify(workerMetadata.opts) || 'default'}`);
+  debugEnabled &&
+    debug(
+      `Starting worker for queue ${queueName} with endpoint ${workerMetadata.endpoint.url} and options ${JSON.stringify(workerMetadata.opts) || "default"}`
+    );
 
-  const worker = new Worker(queueName, async (job: Job, token?: string) => {
-    debugEnabled && debug(`Processing job ${job.id} from queue ${queueName} with endpoint ${workerEndpoint.url}`);
+  const worker = new Worker(
+    queueName,
+    async (job: Job, token?: string) => {
+      debugEnabled &&
+        debug(
+          `Processing job ${job.id} from queue ${queueName} with endpoint ${workerEndpoint.url}`
+        );
 
-    // Process job by calling an external service using the worker endpoint
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => {
-      debugEnabled && ("Timeout, aborting...")
-      controller.abort()
-    }, workerEndpoint.timeout || 3000)
+      // Process job by calling an external service using the worker endpoint
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        debugEnabled && "Timeout, aborting...";
+        controller.abort();
+      }, workerEndpoint.timeout || 3000);
 
-    try {
-      const response = await fetch(workerEndpoint.url, {
-        method: workerEndpoint.method,
-        headers: workerEndpoint.headers,
-        body: JSON.stringify({ job: job.toJSON(), token }),
-        signal: controller.signal
-      });
+      try {
+        const response = await fetch(workerEndpoint.url, {
+          method: workerEndpoint.method,
+          headers: workerEndpoint.headers,
+          body: workerEndpoint.body
+            ? JSON.stringify(workerEndpoint.body)
+            : JSON.stringify({ job: job.toJSON(), token }),
+          signal: controller.signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(response.statusText);
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        debugEnabled &&
+          debug(`Job "${job.id}:${job.name}" processed successfully`);
+
+        // If response is supposed to be json lets parse it
+        if (
+          response.headers.get("content-type")?.includes("application/json")
+        ) {
+          return response.json();
+        } else {
+          return response.text();
+        }
+      } catch (err) {
+        debugEnabled &&
+          debug(`Failed to process job ${job.id}: ${(<Error>err).message}`);
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
       }
-      debugEnabled && debug(`Job "${job.id}:${job.name}" processed successfully`);
-
-      // If response is supposed to be json lets parse it
-      if (response.headers.get('content-type')?.includes('application/json')) {
-        return response.json();
-      } else {
-        return response.text();
-      }
-    } catch (err) {
-      debugEnabled && debug(`Failed to process job ${job.id}: ${(<Error>err).message}`);
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }, { ...workerOptions, connection, prefix: config.defaultQueuePrefix });
+    },
+    { ...workerOptions, connection, prefix: config.defaultQueuePrefix }
+  );
 
   if (debugEnabled) {
-    worker.on('failed', (job, err) => {
+    worker.on("failed", (job, err) => {
       debug(`Job ${job!.id} failed: ${err}`);
     });
   }
@@ -79,17 +101,26 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
 
 let lastEventId: string | undefined;
 
-export const workerStreamListener = async (redisClient: Redis | Cluster, abortSignal: AbortSignal) => {
+export const workerStreamListener = async (
+  redisClient: Redis | Cluster,
+  abortSignal: AbortSignal
+) => {
   const streamBlockingClient = redisClient.duplicate();
   let running = true;
 
-  abortSignal.addEventListener('abort', () => {
+  abortSignal.addEventListener("abort", () => {
     running = false;
     streamBlockingClient.disconnect();
   });
 
   while (running) {
-    const streams = await streamBlockingClient.xread('BLOCK', workerStreamBlockingTime, 'STREAMS', workerMetadataStream, lastEventId || '0');
+    const streams = await streamBlockingClient.xread(
+      "BLOCK",
+      workerStreamBlockingTime,
+      "STREAMS",
+      workerMetadataStream,
+      lastEventId || "0"
+    );
 
     // If we got no events, continue to the next iteration
     if (!streams || streams.length === 0) {
@@ -98,26 +129,37 @@ export const workerStreamListener = async (redisClient: Redis | Cluster, abortSi
 
     const stream = streams[0];
 
-    debugEnabled && debug(`Received ${streams.length} event${streams.length > 1 ? "s" : ""} from stream ${workerMetadataStream}`);
+    debugEnabled &&
+      debug(
+        `Received ${streams.length} event${streams.length > 1 ? "s" : ""} from stream ${workerMetadataStream}`
+      );
 
     const [_streamName, events] = stream;
 
     for (const [eventId, fields] of events) {
-
       lastEventId = eventId;
       const queueName = fields[1];
       const existingWorker = workers[queueName];
       const existingSha = metadatasShas[queueName];
 
-      const workerMetadataRaw = await redisClient.hget(workerMetadataKey, queueName);
+      const workerMetadataRaw = await redisClient.hget(
+        workerMetadataKey,
+        queueName
+      );
 
       // If workerMetadatadaVersion is older than the event id, we need to update the worker
       if (workerMetadataRaw) {
-        const workerMetadataSha256 = createHash('sha256').update(workerMetadataRaw).digest('hex');
+        const workerMetadataSha256 = createHash("sha256")
+          .update(workerMetadataRaw)
+          .digest("hex");
 
-        if ((existingSha !== workerMetadataSha256)) {
+        if (existingSha !== workerMetadataSha256) {
           const workerMetadata = JSON.parse(workerMetadataRaw);
-          workers[queueName] = workerFromMetadata(queueName, workerMetadata, redisClient);
+          workers[queueName] = workerFromMetadata(
+            queueName,
+            workerMetadata,
+            redisClient
+          );
           metadatasShas[queueName] = workerMetadataSha256;
           if (existingWorker) {
             await existingWorker.close();
@@ -135,7 +177,7 @@ export const workerStreamListener = async (redisClient: Redis | Cluster, abortSi
       }
     }
   }
-}
+};
 
 export const WorkerHttpController = {
   loadScripts: async (redisClient: Redis | Cluster) => {
@@ -161,8 +203,8 @@ export const WorkerHttpController = {
           local eventId = redis.call('XADD', workerMetadataStream, 'MAXLEN', streamMaxLen, '*', 'worker', queueName)
           return { removedWorker, eventId }
         end
-      `
-    }
+      `,
+    };
 
     for (const [scriptName, script] of Object.entries(luaScripts)) {
       redisClient.defineCommand(scriptName, { numberOfKeys: 2, lua: script });
@@ -171,41 +213,59 @@ export const WorkerHttpController = {
 
   /**
    * Load workers from Redis and start them.
-   * 
-   * @param redisClient 
-   * @param workersRedisClient 
+   *
+   * @param redisClient
+   * @param workersRedisClient
    */
-  loadWorkers: async (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
+  loadWorkers: async (
+    redisClient: Redis | Cluster,
+    workersRedisClient: Redis | Cluster
+  ) => {
     // Load workers from Redis and start them
-    debugEnabled && debug('Loading workers from Redis...');
-    const result = await redisClient.xrevrange(config.workerMetadataStream, '+', '-', 'COUNT', 1);
+    debugEnabled && debug("Loading workers from Redis...");
+    const result = await redisClient.xrevrange(
+      config.workerMetadataStream,
+      "+",
+      "-",
+      "COUNT",
+      1
+    );
     if (result.length > 0) {
-      [[lastEventId]] = result
+      [[lastEventId]] = result;
     }
     const stream = redisClient.hscanStream(workerMetadataKey, { count: 10 });
-    stream.on('data', (result: string[]) => {
+    stream.on("data", (result: string[]) => {
       for (let i = 0; i < result.length; i += 2) {
         const queueName = result[i];
         const value = result[i + 1];
 
         const workerMetadata = JSON.parse(value) as WorkerMetadata;
-        workers[queueName] = workerFromMetadata(queueName, workerMetadata, workersRedisClient);
-        metadatasShas[queueName] = createHash('sha256').update(value).digest('hex');
+        workers[queueName] = workerFromMetadata(
+          queueName,
+          workerMetadata,
+          workersRedisClient
+        );
+        metadatasShas[queueName] = createHash("sha256")
+          .update(value)
+          .digest("hex");
       }
     });
 
     await new Promise<void>((resolve, reject) => {
-      stream.on('end', () => {
-        debugEnabled && debug('Workers loaded');
+      stream.on("end", () => {
+        debugEnabled && debug("Workers loaded");
         resolve();
       });
-      stream.on('error', (err) => {
+      stream.on("error", (err) => {
         debugEnabled && debug(`Failed to load workers: ${err}`);
         reject(err);
       });
     });
   },
-  init: async (redisClient: Redis | Cluster, workersRedisClient: Redis | Cluster) => {
+  init: async (
+    redisClient: Redis | Cluster,
+    workersRedisClient: Redis | Cluster
+  ) => {
     await WorkerHttpController.loadScripts(redisClient);
     await WorkerHttpController.loadWorkers(redisClient, workersRedisClient);
     workerStreamListener(workersRedisClient, abortController.signal);
@@ -214,19 +274,19 @@ export const WorkerHttpController = {
   /**
    * Add a new worker to the system. A worker is a BullMQ worker that processes
    * jobs by calling an external service.
-   * 
+   *
    * The worker metadata is stored in Redis so that the workers are re-instantiated
    * after a restart.
-   * 
+   *
    * Only one worker per queue is allowed, so calling this method with the same
    * queue name will replace the existing worker.
-   * 
-   * @param opts 
-   * 
-   * @returns 
+   *
+   * @param opts
+   *
+   * @returns
    */
   addWorker: async (opts: HttpHandlerOpts) => {
-    const workerMetadata = await opts.req.json() as WorkerMetadata;
+    const workerMetadata = (await opts.req.json()) as WorkerMetadata;
 
     try {
       validateWorkerMetadata(workerMetadata);
@@ -239,7 +299,7 @@ export const WorkerHttpController = {
 
     // Upsert worker metadata and notify all listeners about the change.
     try {
-      const eventId = await (<any>redisClient)['updateWorkerMetadata'](
+      const eventId = await (<any>redisClient)["updateWorkerMetadata"](
         workerMetadataKey,
         workerMetadataStream,
         queueName,
@@ -249,7 +309,7 @@ export const WorkerHttpController = {
 
       lastEventId = eventId as string;
 
-      return new Response('OK', { status: 200 });
+      return new Response("OK", { status: 200 });
     } catch (err) {
       const errMsg = `Failed to store worker metadata in Redis: ${err}`;
       debugEnabled && debug(errMsg);
@@ -258,20 +318,22 @@ export const WorkerHttpController = {
   },
 
   /**
-   * 
+   *
    * Returns a list of all registered workers.
-   * 
-   * @param opts 
-   * 
+   *
+   * @param opts
+   *
    * @returns { queue: string, url: string }[]
-   * 
+   *
    */
   getWorkers: async (opts: HttpHandlerOpts) => {
     const workerMetadata = await opts.redisClient.hgetall(workerMetadataKey);
 
     // Filter out some metadata fields that are not needed by the client
     for (const queueName in workerMetadata) {
-      workerMetadata[queueName] = JSON.parse(workerMetadata[queueName]).endpoint.url;
+      workerMetadata[queueName] = JSON.parse(
+        workerMetadata[queueName]
+      ).endpoint.url;
     }
 
     return new Response(JSON.stringify(workerMetadata), { status: 200 });
@@ -279,7 +341,7 @@ export const WorkerHttpController = {
 
   /**
    * Remove worker from the system.
-   * 
+   *
    * @param opts
    */
   removeWorker: async (opts: HttpHandlerOpts) => {
@@ -287,35 +349,37 @@ export const WorkerHttpController = {
     const { redisClient } = opts;
 
     try {
-      const result = await (<any>redisClient)['removeWorkerMetadata'](
+      const result = await (<any>redisClient)["removeWorkerMetadata"](
         workerMetadataKey,
         workerMetadataStream,
         queueName,
         config.maxLenWorkerMetadataStream
       );
       if (!result && !workers[queueName]) {
-        return new Response('Worker not found', { status: 404 });
+        return new Response("Worker not found", { status: 404 });
       }
 
       lastEventId = result[1];
 
-      return new Response('OK', { status: 200 });
+      return new Response("OK", { status: 200 });
     } catch (_err) {
       const err = _err as Error;
       debugEnabled && debug(`Failed to remove worker: ${err}`);
-      return new Response(`Failed to remove worker ${err.toString()}`, { status: 500 });
+      return new Response(`Failed to remove worker ${err.toString()}`, {
+        status: 500,
+      });
     }
   },
 
   /**
    * Cleans the proxy metadata from the Redis host.
-   * @param redisClient 
-   * @returns 
+   * @param redisClient
+   * @returns
    */
   cleanMetadata: async (redisClient: Redis | Cluster) => {
     const multi = redisClient.multi();
     multi.del(workerMetadataKey);
     multi.del(workerMetadataStream);
     return multi.exec();
-  }
-}
+  },
+};
