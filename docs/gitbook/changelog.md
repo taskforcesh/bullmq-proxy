@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.4.1...v1.5.0) (2024-11-18)
+
+
+### Features
+
+* upgrade bullmq to 5.26.2 ([141dce5](https://github.com/taskforcesh/bullmq-proxy/commit/141dce57c51bb1104697de96598fdaa1c957d6cd))
+
 ## [1.4.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.4.0...v1.4.1) (2024-11-18)
 
 
