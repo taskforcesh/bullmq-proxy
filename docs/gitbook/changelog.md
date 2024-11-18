@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.4.0...v1.4.1) (2024-11-18)
+
+
+### Bug Fixes
+
+* add a cleanURI function to fix params with special characters ([#26](https://github.com/taskforcesh/bullmq-proxy/issues/26)) ([9980f9e](https://github.com/taskforcesh/bullmq-proxy/commit/9980f9e7a8b1724a2d9fb2013e0ea0de2fab186e))
+
 # [1.4.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.3.1...v1.4.0) (2024-08-10)
 
 
