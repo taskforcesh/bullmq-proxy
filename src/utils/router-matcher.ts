@@ -1,5 +1,5 @@
 import { WebSocketHandler } from "bun";
-import { HttpHandlerOpts } from "../interfaces/http-handler-opts";
+import { HttpHandlerOpts } from "../interfaces";
 import { Cluster, Redis } from "ioredis";
 
 type HttpHandler = (opts: HttpHandlerOpts) => Promise<Response>;
@@ -80,7 +80,7 @@ export class RouteMatcher {
       if (matches && (!route.method || route.method === method)) {
         const params: { [key: string]: any } = {};
         route.paramNames.forEach((param, index) => {
-          params[param] = matches[index + 1];
+          params[param] = decodeURI(matches[index + 1]);
         });
 
         const result: MatchResult = {
