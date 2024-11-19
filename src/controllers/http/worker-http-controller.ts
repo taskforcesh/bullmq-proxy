@@ -55,13 +55,12 @@ const workerFromMetadata = (
         controller.abort();
       }, workerEndpoint.timeout || 3000);
 
+      const bodyData = job.toJSON()?.data;
       try {
         const response = await fetch(workerEndpoint.url, {
           method: workerEndpoint.method,
           headers: workerEndpoint.headers,
-          body: workerEndpoint.body
-            ? JSON.stringify(workerEndpoint.body)
-            : JSON.stringify({ job: job.toJSON(), token }),
+          body: JSON.stringify(bodyData),
           signal: controller.signal,
         });
 
