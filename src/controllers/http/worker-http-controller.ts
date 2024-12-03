@@ -53,7 +53,7 @@ const workerFromMetadata = (
       const timeoutId = setTimeout(() => {
         debugEnabled && "Timeout, aborting...";
         controller.abort();
-      }, workerEndpoint.timeout || 3000);
+      }, workerEndpoint.timeout || 300000);
 
       const bodyData = job.toJSON()?.data;
 
