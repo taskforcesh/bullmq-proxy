@@ -5,13 +5,13 @@ import { Redis } from "ioredis";
 import { config } from "./config";
 import { JobJson, Queue } from "bullmq";
 import { cleanCache } from "./utils/queue-factory";
-import { WorkerHttpController } from "./controllers/http/worker-http-controller";
 
 const token = 'test-token';
 
 describe("e2e", () => {
 
-  const queueName = 'testQueue-e2e';
+  //test queue name with curly braces (Dragonfly way)
+  const queueName = '{testQueue-e2e}';
 
   beforeAll(() => {
     mock.module('./config', () => ({

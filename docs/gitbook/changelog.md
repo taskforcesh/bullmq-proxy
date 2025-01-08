@@ -1,3 +1,24 @@
+## [1.5.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.5.0...v1.5.1) (2024-11-18)
+
+
+### Bug Fixes
+
+* **deps:** upgrade dependencies ([0bed980](https://github.com/taskforcesh/bullmq-proxy/commit/0bed980ad7e92a4b197ba29ada3ee6d1f18f3f5e))
+
+# [1.5.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.4.1...v1.5.0) (2024-11-18)
+
+
+### Features
+
+* upgrade bullmq to 5.26.2 ([141dce5](https://github.com/taskforcesh/bullmq-proxy/commit/141dce57c51bb1104697de96598fdaa1c957d6cd))
+
+## [1.4.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.4.0...v1.4.1) (2024-11-18)
+
+
+### Bug Fixes
+
+* add a cleanURI function to fix params with special characters ([#26](https://github.com/taskforcesh/bullmq-proxy/issues/26)) ([9980f9e](https://github.com/taskforcesh/bullmq-proxy/commit/9980f9e7a8b1724a2d9fb2013e0ea0de2fab186e))
+
 # [1.4.0](https://github.com/taskforcesh/bullmq-proxy/compare/v1.3.1...v1.4.0) (2024-08-10)
 
 

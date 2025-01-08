@@ -16,7 +16,7 @@ describe("RouteMatcher", () => {
     const result = matcher.match("/queues/test%20queue");
     expect(result).toEqual({
       name: "queueRoute",
-      params: { queueName: "test%20queue" },
+      params: { queueName: "test queue" },
     });
   });
 
