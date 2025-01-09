@@ -24,4 +24,11 @@ export default (routeMatcher: RouteMatcher) => {
     QueueHttpController.getJob,
     "get",
     authByTokens);
+
+  routeMatcher.addHttpRoute<{ count: number }>(
+    "clearQueue",
+    "/queues/:queueName/clean",
+    QueueHttpController.clearQueue,
+    "delete",
+    authByTokens);
 }

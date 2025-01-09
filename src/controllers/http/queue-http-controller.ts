@@ -111,5 +111,64 @@ export const QueueHttpController = {
     }
 
     return new Response(JSON.stringify(job), { status: 200 });
+  },
+
+  /**
+   * clearQueue
+   * @param opts
+   * @returns clears jobs from the queue based on status and grace period
+   */
+  clearQueue: async (opts: QueueHttpControllerOpts) => {
+    const queueName = opts.params.queueName;
+    try {
+      validateQueueName(queueName);
+    } catch (err) {
+      return new Response((<Error>err).message, { status: 400 });
+    }
+
+    const queue = await getQueue(queueName, opts.redisClient);
+
+    const status = opts.searchParams?.get("status")
+    if (!status) {
+      return new Response("Missing status query parameter", { status: 400 });
+    }
+
+    try {
+      // Log current queue status
+      const countsBefore = await queue.getJobCounts();
+      console.log('Counts before clean:', countsBefore);
+
+      // Pause queue to ensure safe deletion
+      await queue.pause();
+      console.log('Queue paused');
+
+      try {
+        // Get all jobs in wait status
+        const jobs = await queue.getJobs([status as JobState]);
+
+        // Iterate through each job and remove it
+        for (let job of jobs) {
+          await job.remove();
+        }
+
+        console.log('All wait jobs cleaned');
+      } catch (error) {
+        console.error('Error cleaning wait jobs:', error);
+      }
+
+      // Resume queue
+      await queue.resume();
+      console.log('Queue resumed');
+
+      // Log status after cleanup
+      const countsAfter = await queue.getJobCounts();
+      console.log('Counts after clean:', countsAfter);
+
+      return new Response(JSON.stringify({ countsBefore, countsAfter }), { status: 200 });
+    } catch (err) {
+      // Ensure queue is resumed on error
+      await queue.resume().catch(() => { });
+      return new Response((<Error>err).message, { status: 500 });
+    }
   }
 }

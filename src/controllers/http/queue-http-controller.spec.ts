@@ -72,3 +72,58 @@ describe('QueueHttpController.addJobs', () => {
     expect(job).toHaveProperty('data', 'jobData');
   });
 });
+
+describe('QueueHttpController.clearQueue', () => {
+  let redisClient: Redis;
+  let opts: any;
+
+  beforeEach(async () => {
+    redisClient = new Redis();
+    opts = {
+      params: { queueName: 'testQueue' },
+      searchParams: new URLSearchParams(),
+      redisClient
+    };
+
+    // Add some test jobs
+    const queue = new Queue('testQueue', { connection: redisClient });
+    await queue.add('testJob1', { data: 1 });
+    await queue.add('testJob2', { data: 2 });
+    await queue.close();
+  });
+
+  afterEach(async () => {
+    const queue = new Queue('testQueue', { connection: redisClient });
+    await queue.obliterate({ force: true });
+    await queue.close();
+    await redisClient.quit();
+  });
+
+  it('should clear completed jobs successfully', async () => {
+    // Set status to completed
+    opts.searchParams.set('status', 'completed');
+
+    const response = await QueueHttpController.clearQueue(opts);
+    expect(response).toBeDefined();
+    expect(response.status).toBe(200);
+
+    const result = await response.json();
+    expect(result).toHaveProperty('count');
+  });
+
+  it('should return 400 for invalid status', async () => {
+    opts.searchParams.set('status', 'invalidStatus');
+
+    const response = await QueueHttpController.clearQueue(opts);
+    expect(response).toBeDefined();
+    expect(response.status).toBe(400);
+  });
+
+  it('should return 400 for invalid gracePeriod', async () => {
+    opts.searchParams.set('gracePeriod', 'invalidNumber');
+
+    const response = await QueueHttpController.clearQueue(opts);
+    expect(response).toBeDefined();
+    expect(response.status).toBe(400);
+  });
+});
