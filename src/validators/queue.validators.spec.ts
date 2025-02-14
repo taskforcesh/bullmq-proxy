@@ -93,6 +93,10 @@ describe('validateDeduplicationOpts', () => {
     expect(() => validateDeduplicationOpts(<any>{ id: 'test', ttl: -1000 })).toThrow('Invalid deduplication.ttl -1000, must be greater than 0');
   });
 
+  it('validates successfully with id only', () => {
+    expect(() => validateDeduplicationOpts({ id: 'test' })).not.toThrow();
+  });
+
   it('validates successfully with correct fields', () => {
     expect(() => validateDeduplicationOpts({ id: 'test', ttl: 1000 })).not.toThrow();
   });
