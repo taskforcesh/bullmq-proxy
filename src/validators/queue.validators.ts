@@ -1,4 +1,4 @@
-import { BackoffOptions, JobJson, JobsOptions, RepeatOptions } from "bullmq";
+import { BackoffOptions, JobJson, JobsOptions, RepeatOptions, DebounceOptions } from "bullmq";
 import { config } from "../config";
 
 export const validateQueueName = (queueName: string) => {
@@ -67,6 +67,62 @@ export const validateRepeatOpts = (opts: RepeatOptions) => {
   }
 }
 
+const allowedDeduplicationFields = new Set(["id", "ttl"]);
+export const validateDeduplicationOpts = (opts: DebounceOptions) => {
+  for (const field in opts) {
+    if (!allowedDeduplicationFields.has(field as keyof DebounceOptions)) {
+      throw new Error(`Unexpected field: opts.${field}`);
+    }
+  }
+
+  if (typeof opts.id !== "string") {
+    throw new Error(`Invalid deduplication.id ${opts.id}, must be a string`);
+  }
+
+  if (typeof opts.ttl !== "undefined" && typeof opts.ttl !== "number") {
+    throw new Error(`Invalid deduplication.ttl ${opts.ttl}, must be a number`);
+  }
+
+  if (opts.ttl && opts.ttl <= 0) {
+    throw new Error(`Invalid deduplication.ttl ${opts.ttl}, must be greater than 0`);
+  }
+}
+
+const allowedBackoffFields = new Set(["type", "delay"]);
+export const validateBackoffOpts = (opts: number | BackoffOptions) => {
+  if (typeof opts === "number") {
+    if (opts < 0) {
+      throw new Error(`Invalid backoff delay ${opts}, must be greater than 0`);
+    }
+  }
+  
+  if (typeof opts !== "object" || opts === null || Array.isArray(opts)) {
+    throw new Error(`Invalid backoff ${opts}, must be a number or an object`);
+  }
+
+  if (Object.keys(opts).length === 0) {
+    throw new Error(`Invalid backoff ${JSON.stringify(opts)}, must be a number or an object with at least the type field`);
+  }
+
+  for (const field in opts) {
+    if (!allowedBackoffFields.has(field as keyof BackoffOptions)) {
+      throw new Error(`Unexpected field: opts.${field}`);
+    }
+  }
+
+  if (!["fixed", "exponential"].includes(opts.type) && opts.delay !== undefined) {
+    throw new Error(`Invalid backoff type ${opts.type}, must be "fixed" or "exponential" if delay is provided`);
+  }
+
+  if (typeof opts.delay !== "undefined" && typeof opts.delay !== "number") {
+    throw new Error(`Invalid backoff delay ${opts.delay}, must be a number`);
+  }
+
+  if (opts.delay && opts.delay < 0) {
+    throw new Error(`Invalid backoff delay ${opts.delay}, must be greater than 0`);
+  }
+}
+
 const allowedJobOptsFields: Set<(keyof JobsOptions)> = new Set([
   "delay",
   "lifo",
@@ -74,6 +130,7 @@ const allowedJobOptsFields: Set<(keyof JobsOptions)> = new Set([
   "attempts",
   "backoff",
   "jobId",
+  "deduplication",
   // "repeat", // Disabled as we need to support repeatable jobs on addBulk.
   "removeOnComplete",
   "removeOnFail"]);
@@ -101,8 +158,8 @@ export const validateJobOpts = (opts: JobsOptions) => {
     throw new Error(`Invalid attempts ${opts.attempts}`);
   }
 
-  if (opts.backoff && !["fixed", "exponential"].includes((<BackoffOptions>opts.backoff)?.type)) {
-    throw new Error(`Invalid backoff ${(<BackoffOptions>opts.backoff)?.type}`);
+  if (opts.backoff) {
+    validateBackoffOpts(opts.backoff);
   }
 
   if (typeof opts.lifo !== "undefined" && typeof opts.lifo !== "boolean") {
@@ -111,6 +168,10 @@ export const validateJobOpts = (opts: JobsOptions) => {
 
   if (opts.jobId && typeof opts.jobId !== "string") {
     throw new Error(`Invalid jobId ${opts.jobId}, must be a string`);
+  }
+
+  if (opts.deduplication) {
+    validateDeduplicationOpts(opts.deduplication);
   }
 
   if (opts.repeat) {

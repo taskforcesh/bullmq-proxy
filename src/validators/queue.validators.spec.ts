@@ -113,6 +113,26 @@ describe('validateJobOpts', () => {
     expect(() => validateJobOpts(<any>{ backoff: { type: 'fixed' } })).not.toThrow();
   });
 
+  it('validates backoff correctly with delay', () => {
+    expect(() => validateJobOpts(<any>{ backoff: { type: 'fixed', delay: 1000 } })).not.toThrow();
+  });
+
+  it('throws an error if backoff type is not provided', () => {
+    expect(() => validateJobOpts(<any>{ backoff: {} })).toThrow('Invalid backoff {}, must be a number or an object with at least the type field');
+  });
+
+  it('throws an error if backoff type is custom and delay is provided', () => {
+    expect(() => validateJobOpts(<any>{ backoff: { type: 'custom', delay: 1000 } })).toThrow('Invalid backoff type custom, must be "fixed" or "exponential" if delay is provided');
+  });
+
+  it('throws an error if backoff delay is not a number', () => {
+    expect(() => validateJobOpts(<any>{ backoff: { type: 'fixed', delay: 'not a number' } })).toThrow('Invalid backoff delay not a number, must be a number');
+  });
+
+  it('throws an error if backoff delay is negative', () => {
+    expect(() => validateJobOpts(<any>{ backoff: { type: 'fixed', delay: -1000 } })).toThrow('Invalid backoff delay -1000, must be greater than 0');
+  });
+
   it('throws an error for invalid jobId', () => {
     expect(() => validateJobOpts(<any>{ jobId: 123 })).toThrow('Invalid jobId 123, must be a string');
   });
