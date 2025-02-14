@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { validateJob, validateJobOpts, validateQueueName, validateRepeatOpts } from "./queue.validators";
+import { validateJob, validateJobOpts, validateQueueName, validateRepeatOpts, validateDeduplicationOpts } from "./queue.validators";
 
 describe('validateQueueName', () => {
   it('throws an error for too short queue names', () => {
@@ -73,6 +73,28 @@ describe('validateRepeatOpts', () => {
 
   it('validates successfully with correct fields', () => {
     expect(() => validateRepeatOpts({ every: 1000, limit: 10, key: 'test', immediately: true })).not.toThrow();
+  });
+});
+
+describe('validateDeduplicationOpts', () => {
+  it('throws an error for unexpected fields', () => {
+    expect(() => validateDeduplicationOpts(<any>{ id: 'test', unexpected: true })).toThrow('Unexpected field: opts.unexpected');
+  });
+
+  it('throws an error for invalid id', () => {
+    expect(() => validateDeduplicationOpts(<any>{ id: 123 })).toThrow('Invalid deduplication.id 123, must be a string');
+  });
+
+  it('throws an error for invalid ttl', () => {
+    expect(() => validateDeduplicationOpts(<any>{ id: 'test', ttl: 'not a number' })).toThrow('Invalid deduplication.ttl not a number, must be a number');
+  });
+
+  it('throws an error for negative ttl', () => {
+    expect(() => validateDeduplicationOpts(<any>{ id: 'test', ttl: -1000 })).toThrow('Invalid deduplication.ttl -1000, must be greater than 0');
+  });
+
+  it('validates successfully with correct fields', () => {
+    expect(() => validateDeduplicationOpts({ id: 'test', ttl: 1000 })).not.toThrow();
   });
 });
 
