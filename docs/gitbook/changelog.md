@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/taskforcesh/bullmq-proxy/compare/v1.5.1...v1.5.2) (2025-02-15)
+
+
+### Bug Fixes
+
+* add job validation for deduplication opts ([7a92133](https://github.com/taskforcesh/bullmq-proxy/commit/7a92133148863db9821deaf23fe44fcb9f55b19f))
+
 ## [1.5.1](https://github.com/taskforcesh/bullmq-proxy/compare/v1.5.0...v1.5.1) (2024-11-18)
 
 
