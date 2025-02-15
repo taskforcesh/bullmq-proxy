@@ -4,6 +4,7 @@ import { Worker, ConnectionOptions, Job } from "bullmq";
 
 import { send } from "../utils";
 import { info } from "../../utils/log";
+import { BufferSource } from "../../interfaces";
 
 export interface WorkerWebSocketData {
   connection: ConnectionOptions;
@@ -20,7 +21,7 @@ export const openWorker = async (ws: ServerWebSocket<WorkerWebSocketData>) => {
     `Worker connected for queue ${queueName} with concurrency ${concurrency}`
   );
 
-  const mb = (ws.data.mb = new MessageBroker<object>(async (msg: string | Buffer) =>
+  const mb = (ws.data.mb = new MessageBroker<object>(async (msg: string | BufferSource) =>
     send(ws, msg)
   ));
 

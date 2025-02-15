@@ -1,8 +1,8 @@
 /**
  * LRU Cache - Least Recently Used Cache
- * 
+ *
  * Simple cache implementation using Map.
- * 
+ *
  */
 export type RemoveCallbackType<T> = (key: string, value: T) => Promise<void>;
 
@@ -11,7 +11,8 @@ export class LRUCache<T> {
 
   constructor(
     private capacity: number,
-    private removeCallback: RemoveCallbackType<T> = async () => { }) {
+    private removeCallback: RemoveCallbackType<T> = async () => {}
+  ) {
     this.capacity = capacity;
     this.cache = new Map();
   }
@@ -34,7 +35,9 @@ export class LRUCache<T> {
     }
     if (this.cache.size === this.capacity) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(key, value);
   }
@@ -48,7 +51,9 @@ export class LRUCache<T> {
   }
 
   async clear() {
-    await Promise.all(Array.from(this.cache.keys()).map((key) => this.remove(key)));
+    await Promise.all(
+      Array.from(this.cache.keys()).map((key) => this.remove(key))
+    );
   }
 
   size() {

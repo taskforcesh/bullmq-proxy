@@ -2,7 +2,7 @@ import { ServerWebSocket } from "bun";
 import { MessageBroker } from "./message-broker";
 import { QueueEvents, ConnectionOptions, QueueEventsListener } from "bullmq";
 
-import { WebSocketBehaviour } from "../../interfaces/websocket-behaviour";
+import { WebSocketBehaviour, BufferSource } from "../../interfaces";
 import { send } from "../utils";
 import { info } from "../../utils/log";
 
@@ -30,7 +30,7 @@ export const openQueueEvents = async (
   }));
 
   const messageBroker = (ws.data.mb = new MessageBroker<object>(
-    async (msg: string | Buffer) => send(ws, msg)
+    async (msg: string | BufferSource) => send(ws, msg)
   ));
 
   const events = ws.data.events || [];
@@ -38,13 +38,7 @@ export const openQueueEvents = async (
 
   events.forEach((event) => {
     const eventHandler = async (...args: any[]) => {
-      await messageBroker.sendData(
-        {
-          event,
-          args,
-        },
-        { noack: true }
-      );
+      await messageBroker.sendData({ event, args }, { noack: true });
     };
     info(`Subscribing to event: ${event}, for queue: ${queueName}`);
     queueEvents.on(event, eventHandler);
@@ -58,7 +52,7 @@ export const QueueEventsController: WebSocketBehaviour = {
   message: async (
     _ws: ServerWebSocket<QueueEventsWebSocketData>,
     _message: string | Buffer
-  ) => { },
+  ) => {},
 
   drain: (_ws) => {
     // console.log("WebSocket backpressure: " + ws.getBufferedAmount());
@@ -66,9 +60,9 @@ export const QueueEventsController: WebSocketBehaviour = {
 
   close: async (ws, code, message) => {
     info(
-      `WebSocket closed for queue events (${ws.data.queueName}) with code ${code}${message ? `and message ${Buffer.from(
-        message
-      ).toString()}` : ""}`
+      `WebSocket closed for queue events (${ws.data.queueName}) with code ${code}${
+        message ? `and message ${Buffer.from(message).toString()}` : ""
+      }`
     );
 
     const { queueEvents } = ws.data;
