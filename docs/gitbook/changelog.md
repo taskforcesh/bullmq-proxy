@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/taskforcesh/bullmq-proxy/compare/v1.5.2...v1.5.3) (2025-02-15)
+
+
+### Bug Fixes
+
+* update dependencies ([97156be](https://github.com/taskforcesh/bullmq-proxy/commit/97156be1ce8672de2f8773a9e91c7915e8878a56))
+
 ## [1.5.2](https://github.com/taskforcesh/bullmq-proxy/compare/v1.5.1...v1.5.2) (2025-02-15)
 
 

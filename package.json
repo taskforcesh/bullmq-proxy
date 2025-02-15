@@ -1,6 +1,6 @@
 {
   "name": "bullmq-proxy",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "main": "index.js",
   "author": "Manuel Astudillo <manuel@optimalbits.com>",
