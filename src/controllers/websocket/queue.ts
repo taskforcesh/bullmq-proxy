@@ -3,7 +3,7 @@ import { Queue, ConnectionOptions } from "bullmq";
 import { Value } from "@sinclair/typebox/value";
 import { ServerWebSocket } from "bun";
 
-import { WebSocketBehaviour } from "../../interfaces/websocket-behaviour";
+import { WebSocketBehaviour, BufferSource } from "../../interfaces";
 import { respond, send } from "../utils";
 import { info } from "../../utils/log";
 import { QueueSchema, QueueSchemaType } from "../commands";
@@ -20,7 +20,9 @@ export const openQueue = async (ws: ServerWebSocket<QueueWebSocketData>) => {
   info(`Queue connected for queue ${queueName}`);
 
   ws.data.queue = new Queue(queueName, { connection });
-  ws.data.mb = new MessageBroker<object>(async (msg: string | Buffer) => send(ws, msg));
+  ws.data.mb = new MessageBroker<object>(async (msg: string | BufferSource) =>
+    send(ws, msg)
+  );
 };
 
 export const QueueController: WebSocketBehaviour = {
@@ -40,14 +42,16 @@ export const QueueController: WebSocketBehaviour = {
       if (firstError) {
         // The errors are difficult to read, so we'll just send a generic one
         // until we can do something better.
-        respond(ws, parsedMessage.id, { err: { message: `Invalid message ${message}`, stack: "" } })
+        respond(ws, parsedMessage.id, {
+          err: { message: `Invalid message ${message}`, stack: "" },
+        });
         return;
       }
 
       const queue = ws.data.queue;
-      const { fn, args }: { fn: string, args: any[] } = parsedMessage.data;
+      const { fn, args }: { fn: string; args: any[] } = parsedMessage.data;
       try {
-        const queueMethod = (<any>queue)[fn] as Function
+        const queueMethod = (<any>queue)[fn] as Function;
         const result = await queueMethod.apply(queue, args);
         respond(ws, parsedMessage.id, { ok: result });
       } catch (err) {
@@ -64,9 +68,9 @@ export const QueueController: WebSocketBehaviour = {
 
   close: async (ws, code, message) => {
     info(
-      `WebSocket closed for queue (${ws.data.queueName}) with code ${code}${message ? `and message ${Buffer.from(
-        message
-      ).toString()}` : ""}`
+      `WebSocket closed for queue (${ws.data.queueName}) with code ${code}${
+        message ? `and message ${Buffer.from(message).toString()}` : ""
+      }`
     );
 
     const queue = ws.data.queue;
