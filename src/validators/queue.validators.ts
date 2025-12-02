@@ -1,4 +1,4 @@
-import { BackoffOptions, JobJson, JobsOptions, RepeatOptions, DebounceOptions } from "bullmq";
+import { BackoffOptions, JobJson, JobsOptions, RepeatOptions, DeduplicationOptions } from "bullmq";
 import { config } from "../config";
 
 export const validateQueueName = (queueName: string) => {
@@ -68,10 +68,10 @@ export const validateRepeatOpts = (opts: RepeatOptions) => {
 }
 
 const allowedDeduplicationFields = new Set(["id", "ttl"]);
-export const validateDeduplicationOpts = (opts: DebounceOptions) => {
+export const validateDeduplicationOpts = (opts: DeduplicationOptions) => {
   for (const field in opts) {
-    if (!allowedDeduplicationFields.has(field as keyof DebounceOptions)) {
-      throw new Error(`Unexpected field: opts.${field}`);
+    if (!allowedDeduplicationFields.has(field as keyof DeduplicationOptions)) {
+      throw new Error(`Unexpected field: opts.${String(field)}`);
     }
   }
 

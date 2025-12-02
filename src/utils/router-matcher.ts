@@ -24,7 +24,7 @@ type MatchResult = {
   params: Record<string, string>;
   query?: any;
   auth?: AuthFn;
-  websocketHandler?: WebSocketHandler;
+  websocketHandler?: WebSocketHandler<any>;
   httpHandler?: HttpHandler;
 };
 

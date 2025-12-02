@@ -1,17 +1,11 @@
 import { Cluster, Redis } from "ioredis";
 import chalk from "chalk";
 
-import { WebSocketBehaviour } from "./interfaces/websocket-behaviour";
+import { WebSocketData } from "./interfaces";
 import { warn } from "./utils/log";
 import { fetchHandler } from "./fetch-handler";
 import asciiArt from "./ascii-art";
 import { WorkerHttpController } from "./controllers/http/worker-http-controller";
-
-type WebSocketData = {
-  createdAt: number;
-  params: any;
-  controller: WebSocketBehaviour;
-};
 
 const websocket = {
   message(ws: any, message: any) {
