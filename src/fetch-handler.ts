@@ -1,13 +1,14 @@
 import { Redis, Cluster } from "ioredis";
+import { Server } from "bun";
 
 import {
   QueueController,
   WorkerController,
   QueueEventsController,
 } from "./controllers";
+import { WebSocketData } from "./interfaces";
 import { RouteMatcher } from "./utils/router-matcher";
 import { warn } from "./utils/log";
-import { Server } from "bun";
 import queuesRoutes from "./routes/queues-routes";
 import asciiArt from "./ascii-art";
 import workersRoutes from "./routes/workers-routes";
@@ -35,7 +36,7 @@ routeMatcher.addWebSocketRoute<{ queueName: string }>(
 
 export const fetchHandler = (
   connection: Redis | Cluster,
-  workersConnection: Redis | Cluster) => async (req: Request, server: Server) => {
+  workersConnection: Redis | Cluster) => async (req: Request, server: Server<WebSocketData>) => {
     const url = new URL(req.url);
     const { searchParams } = url;
     const { method } = req;

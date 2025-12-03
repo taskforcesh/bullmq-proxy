@@ -1,5 +1,4 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock } from "bun:test";
-import { Server } from "bun";
 import { cleanProxy, startProxy } from "./proxy";
 import { Redis } from "ioredis";
 import { config } from "./config";
@@ -51,7 +50,7 @@ describe("e2e", () => {
     const proxy = await startProxy(0, redisClient, redisClient.duplicate());
     const proxyPort = proxy.port;
 
-    let server: Server;
+    let server: any;
     const processingJob = new Promise<void>((resolve, reject) => {
       server = Bun.serve({
         // Typescript requires this dummy websocket
