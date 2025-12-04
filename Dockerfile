@@ -13,7 +13,7 @@ COPY src ./src
 RUN bun install --production --ignore-scripts
 
 CMD bun start
-HEALTHCHECK --interval=5s --timeout=5s --retries=3 CMD wget localhost:8080 -q -O - > /dev/null 2>&1
+HEALTHCHECK --interval=5s --timeout=5s --retries=3 CMD bun -e "fetch('http://localhost:8080').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
 LABEL org.opencontainers.image.source="https://github.com/taskforcesh/bullmq-proxy"
 LABEL org.opencontainers.image.description "BullMQ Proxy - Access BullMQ Queues via HTTP and WebSockets"
