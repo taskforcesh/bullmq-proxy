@@ -1,16 +1,23 @@
 package wsclient
 
 import (
+	"context"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
 
-	"taskforce.sh/bullmq_proxy_client/queue"
+	"github.com/stretchr/testify/require"
+	"taskforce.sh/bullmq_proxy_client/pkg/queue"
 )
 
 func TestAddJob(t *testing.T) {
+	ctx := context.Background()
+	h := make(http.Header)
+	h.Set("Authorization", "Bearer 1234")
 	const numJobs = 10
-	q := queue.NewQueue("ws://localhost:8080/queues/test?token=1234")
+	q, err := queue.NewQueue(ctx, "ws://localhost:8080/ws/queues/test", h)
+	require.NoError(t, err)
 
 	// Use a wait group to wait for all goroutines to finish
 	var wg sync.WaitGroup
@@ -48,12 +55,13 @@ func TestAddJob(t *testing.T) {
 
 	// Channels for signaling
 	var jobCount int
-	
-	worker := queue.NewWorker("ws://localhost:8080", "test", "1234", 10, func(job interface{}) (interface{}, error) {
+
+	worker, err := queue.NewWorker(ctx, "ws://localhost:8080", "test", "1234", 10, func(job interface{}) (interface{}, error) {
 		t.Logf("Processing job: %v", job)
-		jobCount++	
+		jobCount++
 		return nil, nil
 	})
+	require.NoError(t, err)
 
 	// Sleep for a bit to allow the worker to  process
 	time.Sleep(8 * time.Second)
