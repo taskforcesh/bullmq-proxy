@@ -3,6 +3,16 @@ import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test"
 import { WorkerHttpController } from './worker-http-controller';
 import { config } from '../../config';
 
+type RedisWithWorkerScripts = Redis & {
+  updateWorkerMetadata: (
+    workerMetadataKey: string,
+    workerMetadataStream: string,
+    queueName: string,
+    workerMetadata: string,
+    streamMaxLen: string | number,
+  ) => Promise<string>;
+};
+
 const fakeAddValidReq = {
   json: () => Promise.resolve({
     queue: 'validQueue',
@@ -36,15 +46,19 @@ describe('WorkerHttpController.init', () => {
 
   it('should initialize workers from Redis metadata', async () => {
     await WorkerHttpController.loadScripts(redisClient);
+    const workerMetadata = await fakeAddValidReq.json();
 
-    const eventId = await (<any>redisClient).updateWorkerMetadata(
+    const eventId = await (redisClient as RedisWithWorkerScripts).updateWorkerMetadata(
       config.workerMetadataKey,
       config.workerMetadataStream,
       'validQueue',
-      JSON.stringify(await fakeAddValidReq.json()),
+      JSON.stringify(workerMetadata),
       config.maxLenWorkerMetadataStream,
     );
     expect(eventId).toBeString();
+    expect(
+      JSON.parse((await redisClient.hget(config.workerMetadataKey, 'validQueue'))!),
+    ).toEqual(workerMetadata);
 
     await expect(
       WorkerHttpController.loadWorkers(redisClient, workersRedisClient),
