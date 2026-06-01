@@ -15,11 +15,32 @@ const fakeAddValidReq = {
 } as Request;
 
 describe('WorkerHttpController.init', () => {
+  let redisClient: Redis;
+  let workersRedisClient: Redis;
+
+  beforeAll(async () => {
+    redisClient = new Redis({
+      maxRetriesPerRequest: null,
+    });
+    workersRedisClient = new Redis({
+      maxRetriesPerRequest: null,
+    });
+    await WorkerHttpController.cleanMetadata(redisClient);
+  });
+
+  afterAll(async () => {
+    await WorkerHttpController.cleanMetadata(redisClient);
+    await redisClient.quit();
+    await workersRedisClient.quit();
+  });
 
   it('should initialize workers from Redis metadata', async () => {
-    await expect(WorkerHttpController.init(new Redis(), new Redis({
-      maxRetriesPerRequest: null,
-    }))).resolves.toBeUndefined;
+    await expect(
+      Promise.all([
+        WorkerHttpController.loadScripts(redisClient),
+        WorkerHttpController.loadWorkers(redisClient, workersRedisClient),
+      ]),
+    ).resolves.toBeDefined();
   });
 });
 
@@ -36,10 +57,12 @@ describe('WorkerHttpController.addWorker', () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+    await WorkerHttpController.cleanMetadata(redisClient);
     await WorkerHttpController.loadScripts(redisClient);
   });
 
   afterAll(async () => {
+    await WorkerHttpController.cleanMetadata(redisClient);
     await redisClient.quit();
   });
 
@@ -88,7 +111,13 @@ describe('WorkerHttpController.removeWorker', () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+    await WorkerHttpController.cleanMetadata(redisClient);
     await WorkerHttpController.loadScripts(redisClient);
+  });
+
+  afterAll(async () => {
+    await WorkerHttpController.cleanMetadata(redisClient);
+    await redisClient.quit();
   });
 
   it('should remove a worker successfully', async () => {
