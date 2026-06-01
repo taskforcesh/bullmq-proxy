@@ -35,12 +35,31 @@ describe('WorkerHttpController.init', () => {
   });
 
   it('should initialize workers from Redis metadata', async () => {
+    await WorkerHttpController.loadScripts(redisClient);
+
+    const eventId = await (<any>redisClient).updateWorkerMetadata(
+      config.workerMetadataKey,
+      config.workerMetadataStream,
+      'validQueue',
+      JSON.stringify(await fakeAddValidReq.json()),
+      config.maxLenWorkerMetadataStream,
+    );
+    expect(eventId).toBeString();
+
     await expect(
-      Promise.all([
-        WorkerHttpController.loadScripts(redisClient),
-        WorkerHttpController.loadWorkers(redisClient, workersRedisClient),
-      ]),
-    ).resolves.toBeDefined();
+      WorkerHttpController.loadWorkers(redisClient, workersRedisClient),
+    ).resolves.toBeUndefined();
+
+    const response = await WorkerHttpController.getWorkers({
+      req: {} as Request,
+      redisClient,
+      workersRedisClient,
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      validQueue: 'http://example.com',
+    });
   });
 });
 
