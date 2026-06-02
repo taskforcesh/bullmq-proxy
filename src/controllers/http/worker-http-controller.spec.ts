@@ -3,6 +3,16 @@ import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test"
 import { WorkerHttpController } from './worker-http-controller';
 import { config } from '../../config';
 
+type RedisWithWorkerScripts = Redis & {
+  updateWorkerMetadata: (
+    workerMetadataKey: string,
+    workerMetadataStream: string,
+    queueName: string,
+    workerMetadata: string,
+    streamMaxLen: string | number,
+  ) => Promise<string>;
+};
+
 const fakeAddValidReq = {
   json: () => Promise.resolve({
     queue: 'validQueue',
@@ -15,11 +25,55 @@ const fakeAddValidReq = {
 } as Request;
 
 describe('WorkerHttpController.init', () => {
+  let redisClient: Redis;
+  let workersRedisClient: Redis;
+
+  beforeAll(async () => {
+    redisClient = new Redis({
+      maxRetriesPerRequest: null,
+    });
+    workersRedisClient = new Redis({
+      maxRetriesPerRequest: null,
+    });
+    await WorkerHttpController.cleanMetadata(redisClient);
+  });
+
+  afterAll(async () => {
+    await WorkerHttpController.cleanMetadata(redisClient);
+    await redisClient.quit();
+    await workersRedisClient.quit();
+  });
 
   it('should initialize workers from Redis metadata', async () => {
-    await expect(WorkerHttpController.init(new Redis(), new Redis({
-      maxRetriesPerRequest: null,
-    }))).resolves.toBeUndefined;
+    await WorkerHttpController.loadScripts(redisClient);
+    const workerMetadata = await fakeAddValidReq.json();
+
+    const eventId = await (redisClient as RedisWithWorkerScripts).updateWorkerMetadata(
+      config.workerMetadataKey,
+      config.workerMetadataStream,
+      'validQueue',
+      JSON.stringify(workerMetadata),
+      config.maxLenWorkerMetadataStream,
+    );
+    expect(eventId).toBeString();
+    expect(
+      JSON.parse((await redisClient.hget(config.workerMetadataKey, 'validQueue'))!),
+    ).toEqual(workerMetadata);
+
+    await expect(
+      WorkerHttpController.loadWorkers(redisClient, workersRedisClient),
+    ).resolves.toBeUndefined();
+
+    const response = await WorkerHttpController.getWorkers({
+      req: {} as Request,
+      redisClient,
+      workersRedisClient,
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      validQueue: 'http://example.com',
+    });
   });
 });
 
@@ -36,10 +90,12 @@ describe('WorkerHttpController.addWorker', () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+    await WorkerHttpController.cleanMetadata(redisClient);
     await WorkerHttpController.loadScripts(redisClient);
   });
 
   afterAll(async () => {
+    await WorkerHttpController.cleanMetadata(redisClient);
     await redisClient.quit();
   });
 
@@ -88,7 +144,13 @@ describe('WorkerHttpController.removeWorker', () => {
     redisClient = new Redis({
       maxRetriesPerRequest: null
     });
+    await WorkerHttpController.cleanMetadata(redisClient);
     await WorkerHttpController.loadScripts(redisClient);
+  });
+
+  afterAll(async () => {
+    await WorkerHttpController.cleanMetadata(redisClient);
+    await redisClient.quit();
   });
 
   it('should remove a worker successfully', async () => {

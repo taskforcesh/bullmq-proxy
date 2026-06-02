@@ -89,7 +89,16 @@ export const workerStreamListener = async (redisClient: Redis | Cluster, abortSi
   });
 
   while (running) {
-    const streams = await streamBlockingClient.xread('BLOCK', workerStreamBlockingTime, 'STREAMS', workerMetadataStream, lastEventId || '0');
+    let streams;
+    try {
+      streams = await streamBlockingClient.xread('BLOCK', workerStreamBlockingTime, 'STREAMS', workerMetadataStream, lastEventId || '0');
+    } catch (err) {
+      if (!running || abortSignal.aborted) {
+        break;
+      }
+
+      throw err;
+    }
 
     // If we got no events, continue to the next iteration
     if (!streams || streams.length === 0) {
