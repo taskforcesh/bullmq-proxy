@@ -30,7 +30,7 @@
   ],
   "overrides": {
     "undici@>=7.0.0 <7.28.0": "^7.28.0",
-    "undici@<6.27.0": "^6.27.0"
+    "undici@>=6.0.0 <6.27.0": "^6.27.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
