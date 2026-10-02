@@ -15,8 +15,8 @@
     "chalk": "^2.4.2"
   },
   "devDependencies": {
-    "@commitlint/cli": "^8.0.0",
-    "@commitlint/config-conventional": "^8.0.0",
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
     "@types/chalk": "^2.2.0",
     "bun-types": "^1.0.3",
     "husky": "^2.4.1",
