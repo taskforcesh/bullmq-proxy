@@ -2,5 +2,28 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
-  ]
+  ],
+  "timezone": "UTC",
+  "schedule": [
+    "before 6am"
+  ],
+  "prConcurrentLimit": 1,
+  "separateMajorMinor": false,
+  "separateMultipleMajor": false,
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "*"
+      ],
+      "groupName": "all dependencies",
+      "groupSlug": "all"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "groupName": "all dependencies",
+    "groupSlug": "all",
+    "schedule": [
+      "before 6am"
+    ]
+  }
 }
