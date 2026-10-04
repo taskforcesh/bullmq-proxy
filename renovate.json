@@ -3,27 +3,79 @@
   "extends": [
     "config:recommended"
   ],
-  "timezone": "UTC",
+  "timezone": "Europe/Madrid",
   "schedule": [
-    "before 6am"
+    "before 7am on monday"
   ],
-  "prConcurrentLimit": 1,
-  "separateMajorMinor": false,
-  "separateMultipleMajor": false,
+  "minimumReleaseAge": "3 days",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 7am on monday"
+    ]
+  },
   "packageRules": [
     {
+      "description": "Group every non-major update (npm and GitHub Actions) into one weekly PR",
       "matchPackageNames": [
         "*"
       ],
-      "groupName": "all dependencies",
-      "groupSlug": "all"
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest",
+        "pinDigest"
+      ],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-non-major"
+    },
+    {
+      "description": "Runtime majors (and overrides/resolutions, which apply to every consumer) need a planned upgrade: the PR is only created after it is ticked on the Dependency Dashboard",
+      "matchDepTypes": [
+        "dependencies",
+        "peerDependencies",
+        "optionalDependencies",
+        "resolutions",
+        "overrides"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Dev-tooling majors: one PR per package, at most once a month",
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "schedule": [
+        "before 7am on the first day of the month"
+      ]
+    },
+    {
+      "description": "GitHub Actions majors: one PR per action, at most once a month",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "schedule": [
+        "before 7am on the first day of the month"
+      ]
     }
   ],
   "vulnerabilityAlerts": {
-    "groupName": "all dependencies",
-    "groupSlug": "all",
-    "schedule": [
-      "before 6am"
+    "enabled": true,
+    "labels": [
+      "security"
     ]
-  }
+  },
+  "osvVulnerabilityAlerts": true
 }
