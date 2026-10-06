@@ -103,6 +103,10 @@ describe('validateDeduplicationOpts', () => {
 });
 
 describe('validateJobOpts', () => {
+  it('rejects repeat options unsupported by bulk job creation', () => {
+    expect(() => validateJobOpts(<any>{ repeat: { every: 1000 } })).toThrow('Unexpected field: opts.repeat');
+  });
+
   it('throws an error for unexpected fields', () => {
     expect(() => validateJobOpts(<any>{ delay: 1000, unexpected: true })).toThrow('Unexpected field: opts.unexpected');
   });

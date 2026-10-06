@@ -174,9 +174,6 @@ export const validateJobOpts = (opts: JobsOptions) => {
     validateDeduplicationOpts(opts.deduplication);
   }
 
-  if (opts.repeat) {
-    validateRepeatOpts(opts.repeat);
-  }
 }
 
 export const validatePagination = (start: number, length: number) => {

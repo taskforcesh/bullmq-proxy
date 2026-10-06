@@ -11,16 +11,16 @@
   },
   "dependencies": {
     "@taskforcesh/message-broker": "^1.0.1",
-    "bullmq": "^4.11.4",
-    "chalk": "^2.4.2"
+    "bullmq": "^6.0.0",
+    "chalk": "^6.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.0",
     "@commitlint/config-conventional": "^21.0.0",
     "@types/chalk": "^2.2.0",
     "bun-types": "^1.0.3",
-    "husky": "^2.4.1",
-    "ts-node": "^8.2.0",
+    "husky": "^9.0.0",
+    "ts-node": "^10.0.0",
     "typescript": "latest"
   },
   "husky": {
