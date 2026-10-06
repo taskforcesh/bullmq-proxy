@@ -1,6 +1,6 @@
-import { Redis } from 'ioredis';
+import { Redis, Cluster } from 'ioredis';
 import { describe, it, jest, mock, expect, beforeAll, afterAll } from "bun:test";
-import { WorkerHttpController } from './worker-http-controller';
+import { WorkerHttpController, workerStreamListener } from './worker-http-controller';
 import { config } from '../../config';
 
 type RedisWithWorkerScripts = Redis & {
@@ -23,6 +23,29 @@ const fakeAddValidReq = {
     }
   })
 } as Request;
+
+describe('workerStreamListener', () => {
+  for (const Client of [Redis, Cluster]) {
+    it(`duplicates and disconnects a ${Client.name} client when aborted`, async () => {
+      const controller = new AbortController();
+      const blockingClient = {
+        xread: jest.fn(async () => {
+          controller.abort();
+          throw new Error('Connection closed');
+        }),
+        disconnect: jest.fn(),
+      };
+      const redisClient = Object.create(Client.prototype);
+      redisClient.duplicate = jest.fn(() => blockingClient);
+
+      await expect(workerStreamListener(redisClient, controller.signal)).resolves.toBeUndefined();
+
+      expect(redisClient.duplicate).toHaveBeenCalledTimes(1);
+      expect(blockingClient.xread).toHaveBeenCalledTimes(1);
+      expect(blockingClient.disconnect).toHaveBeenCalledTimes(1);
+    });
+  }
+});
 
 describe('WorkerHttpController.init', () => {
   let redisClient: Redis;

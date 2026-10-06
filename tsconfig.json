@@ -6,12 +6,11 @@
     "target": "esnext",
     "lib": ["ESNext", "dom", "WebWorker"],
     "noImplicitAny": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "sourceMap": true,
     "outDir": "dist",
-    "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*", "src/types/*"]
+      "*": ["./node_modules/*", "./src/types/*"]
     },
     "types": ["bun"]
   },

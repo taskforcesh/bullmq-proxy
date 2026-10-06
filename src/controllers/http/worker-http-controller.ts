@@ -80,7 +80,9 @@ const workerFromMetadata = (queueName: string, workerMetadata: WorkerMetadata, c
 let lastEventId: string | undefined;
 
 export const workerStreamListener = async (redisClient: Redis | Cluster, abortSignal: AbortSignal) => {
-  const streamBlockingClient = redisClient.duplicate();
+  const streamBlockingClient = redisClient instanceof Cluster
+    ? redisClient.duplicate()
+    : redisClient.duplicate();
   let running = true;
 
   abortSignal.addEventListener('abort', () => {
